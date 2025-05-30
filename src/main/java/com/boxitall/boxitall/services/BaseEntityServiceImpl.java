@@ -61,7 +61,8 @@ public abstract class BaseEntityServiceImpl<E extends BaseEntity, ID extends Ser
     public E update(ID id, E entity) throws Exception {
         try {
             Optional<E> entityOptional = baseEntityRepository.findById(id);
-            return baseEntityRepository.save(entityOptional.get());
+            if (entityOptional.isEmpty()) throw new Exception("No se encuentra la entidad");
+            return baseEntityRepository.save(entity);
         } catch (Exception e) {
             throw new Exception(e.getMessage());
         }

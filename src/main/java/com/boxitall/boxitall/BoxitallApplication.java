@@ -19,6 +19,7 @@ public class BoxitallApplication {
 		});
 
 		SpringApplication.run(BoxitallApplication.class, args);
+		System.out.println("BoxitAll corriendo");
 	}
 
 }
