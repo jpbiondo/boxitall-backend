@@ -1,5 +1,23 @@
 package com.boxitall.boxitall.dtos;
 
-public class DTOArticulo {
-    private 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
+import java.util.Date;
+
+@Getter
+@Setter
+@ToString
+@AllArgsConstructor
+public class DTOArticuloListado {
+    private Long id;
+    private String nombre;
+    private float stock;
+    private String modeloInventario;
+    private Date fechaProximoPedido;
+    private float stockProximoPedido;
+    private String proveedorPredeterminadoNombre;
+    private Long proveedorPredeterminadoId;
 }
