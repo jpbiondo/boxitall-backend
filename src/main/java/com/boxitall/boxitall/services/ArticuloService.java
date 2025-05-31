@@ -59,9 +59,9 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     @Transactional
     public DTOArticuloDetalle getArticuloDetalle(Long id){
         try{
-            Optional<Articulo> optArticulo = articuloRepository.findById(id);
-            if (optArticulo.isEmpty()) throw new Exception("No se encuentra el artículo");
-            Articulo articulo = optArticulo.get();
+            //Encontrar artículo
+            Articulo articulo = encontrarArticulo(id);
+
             DTOArticuloDetalle dto = new DTOArticuloDetalle(
                     articulo.getId(), articulo.getNombre(), articulo.getStock(), articulo.getDescripcion(), articulo.getCostoAlmacenamiento(),
                     "modInv", new Date(), 0f, // Cambiar - Modelo Inventario
