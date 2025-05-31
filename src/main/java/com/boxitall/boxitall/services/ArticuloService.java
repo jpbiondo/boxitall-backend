@@ -79,9 +79,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     public void addProveedor(Proveedor proveedor, Long idArt){
         try{
             //Encontrar el Artículo
-            Optional<Articulo> optArticulo = articuloRepository.findById(idArt);
-            if (optArticulo.isEmpty()) throw new Exception("No se encuentra el artículo");
-            Articulo articulo = optArticulo.get();
+            Articulo articulo = encontrarArticulo(idArt);
 
             //checkear que no esté ya agregado el proveedor
             List<ArticuloProveedor> artProvs = articulo.getArtProveedores();
@@ -108,9 +106,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     public void setProveedorPred(Proveedor proveedor, Long idArt){
         try{
             //Encontrar el Artículo
-            Optional<Articulo> optArticulo = articuloRepository.findById(idArt);
-            if (optArticulo.isEmpty()) throw new Exception("No se encuentra el artículo");
-            Articulo articulo = optArticulo.get();
+            Articulo articulo = encontrarArticulo(idArt);
 
             //checkear que ya esté agregado el proveedor
             boolean presente = false;
@@ -127,11 +123,19 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             articulo.setProvPred(proveedor);
 
             //RECALCULAR CGI?
+            //RECALCULAR lote óptimo, punto pedido, stock seguridad
 
             //Guardar cambios
             update(idArt, articulo);
         } catch (Exception e) {
 
         }
+    }
+
+    // Encuentra un artículo que puede o no estar
+    private Articulo encontrarArticulo(Long idArt) throws Exception {
+        Optional<Articulo> optArticulo = articuloRepository.findById(idArt);
+        if (optArticulo.isEmpty()) throw new Exception("No se encuentra el artículo");
+        return optArticulo.get();
     }
 }
