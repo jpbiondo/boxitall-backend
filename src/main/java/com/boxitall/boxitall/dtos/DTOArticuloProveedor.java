@@ -1,19 +1,15 @@
-package com.boxitall.boxitall.entities;
+package com.boxitall.boxitall.dtos;
 
-import jakarta.persistence.Entity;
-import lombok.AllArgsConstructor;
+import com.boxitall.boxitall.entities.Proveedor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.Date;
 
-@Entity
-@AllArgsConstructor
-@NoArgsConstructor
 @Getter
 @Setter
-public class ArticuloProveedor extends BaseEntity{
+public class DTOArticuloProveedor
+{
     private float costoCompra;
     private float cargoPedido;
     private float costoPedido;
@@ -21,8 +17,5 @@ public class ArticuloProveedor extends BaseEntity{
     private float precioUnitario;
     private float puntoPedido;
 
-    private Date fechaBaja;
-
-    //Relaciones
     private Proveedor proveedor;
 }

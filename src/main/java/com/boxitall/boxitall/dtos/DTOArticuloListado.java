@@ -18,6 +18,6 @@ public class DTOArticuloListado {
     private String modeloInventario;
     private Date fechaProximoPedido;
     private float stockProximoPedido;
-    private String proveedorPredeterminadoNombre;
     private Long proveedorPredeterminadoId;
+    private String proveedorPredeterminadoNombre;
 }

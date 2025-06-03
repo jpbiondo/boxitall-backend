@@ -1,35 +1,56 @@
 package com.boxitall.boxitall.services;
 
+import com.boxitall.boxitall.dtos.DTOArticuloAlta;
 import com.boxitall.boxitall.dtos.DTOArticuloDetalle;
 import com.boxitall.boxitall.dtos.DTOArticuloListado;
-import com.boxitall.boxitall.entities.Articulo;
-import com.boxitall.boxitall.entities.ArticuloProveedor;
-import com.boxitall.boxitall.entities.Proveedor;
+import com.boxitall.boxitall.entities.*;
 import com.boxitall.boxitall.repositories.ArticuloRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-/*
-    TODO
-
-     LISTALL
-        Info proveedor
-        Modelo de inventario
-            Qué dato mostrar según modelo inventario
-     GETARTICULO DETALLE
-        Info Proveedor pred, modelo de invenatrio, proveedores
- */
 
 @Service
 public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     @Autowired
     private ArticuloRepository articuloRepository;
+
+    @Transactional
+    public void altaArticulo(DTOArticuloAlta dto){ // TODO - Es void
+        try{
+
+            //Decidir modelo de inventario
+            ArticuloModeloInventario modeloInventario;
+            switch (dto.getModeloNombre()){
+                case "LoteFijo" -> {
+                    modeloInventario = new ArticuloModeloLoteFijo(dto.getStockSeguridad(), dto.getLoteOptimo(), dto.getPuntoPedido());
+                }
+                case "IntervaloFijo" ->{
+                    modeloInventario = new ArticuloModeloIntervaloFijo(dto.getStockSeguridad(), LocalDate.now().plusDays(dto.getIntervaloPedido()) , dto.getIntervaloPedido(), dto.getInventarioMaximo());
+                }
+                default -> throw new RuntimeException("Modelo desconocido");
+            }
+
+
+            // Crear artículo
+            Articulo articulo = new Articulo(
+                    dto.getNombre(), dto.getDescripcion(),dto.getCostoAlmacenamiento(),
+                    dto.getDemanda(),dto.getDemandaDesviacionEstandar(),dto.getNivelServicio(),
+                    dto.getStock(), modeloInventario          // TODO - Proveedor o estado?
+            );
+
+            // Guardar el artículo
+            articuloRepository.save(articulo);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Transactional
     public List<DTOArticuloListado> listAll(){
@@ -38,14 +59,9 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             List<DTOArticuloListado> dtos = new ArrayList<>();
             for(Articulo articulo : articulos){
                 DTOArticuloListado dto = new DTOArticuloListado(
-                        articulo.getId(),
-                        articulo.getNombre(),
-                        articulo.getStock(),
-                        "modelo prueba", //Cambiar
-                        new Date(), // Cambiar
-                        0, // Cambiar
-                        "Roberto", // Cambiar
-                        20L // Cambiar
+                        articulo.getId(), articulo.getNombre(), articulo.getStock(),
+                        "modelo prueba", new Date(), 0, // TODO - Modelo inventario
+                        articulo.getProvPred().getId(), articulo.getProvPred().getProveedorNombre()
                 );
                 dtos.add(dto);
             }
@@ -56,6 +72,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         }
     }
 
+    // Obtiene toda la información del artículo para mostrarla en detalle
     @Transactional
     public DTOArticuloDetalle getArticuloDetalle(Long id){
         try{
@@ -64,9 +81,9 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
             DTOArticuloDetalle dto = new DTOArticuloDetalle(
                     articulo.getId(), articulo.getNombre(), articulo.getStock(), articulo.getDescripcion(), articulo.getCostoAlmacenamiento(),
-                    "modInv", new Date(), 0f, // Cambiar - Modelo Inventario
-                    10L, "Roberto", // Cambiar - Proveedor
-                    10,10,10,10,10 //Cambiar - CGI
+                    articulo.getModeloInventario().getNombre(), new Date(), 0f, // TODO - Modelo Inventario
+                    articulo.getProvPred().getId(), articulo.getProvPred().getProveedorNombre(),
+                    10,10,10,10,10 // TODO - CGI
             );
             return dto;
         }
@@ -90,7 +107,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             }
 
             // Agregar ArtículoProveedor
-            ArticuloProveedor artProv = new ArticuloProveedor(proveedor);
+            ArticuloProveedor artProv = new ArticuloProveedor(); //TODO atributos ArticuloProveedor
             artProvs.add(artProv);
             articulo.setArtProveedores(artProvs);
 
@@ -110,6 +127,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
             //checkear que ya esté agregado el proveedor
             boolean presente = false;
+            ArticuloProveedor artProvPred;
             List<ArticuloProveedor> artProvs = articulo.getArtProveedores();
             for(ArticuloProveedor artProv: artProvs){
                 if (artProv.getProveedor() == proveedor){
@@ -122,8 +140,8 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             //Settear proveedor
             articulo.setProvPred(proveedor);
 
-            //RECALCULAR CGI?
-            //RECALCULAR lote óptimo, punto pedido, stock seguridad
+            // TODO RECALCULAR CGI? Creo que no
+            // TODO RECALCULAR lote óptimo, punto pedido, stock seguridad
 
             //Guardar cambios
             update(idArt, articulo);
