@@ -19,7 +19,6 @@ public class DTOArticuloAlta {
 
     //Modelo inventario
     private String modeloNombre;
-    private float stockSeguridad;
     //Intervalo fijo
     private int intervaloPedido;
     private float inventarioMaximo;

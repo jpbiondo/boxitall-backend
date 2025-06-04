@@ -10,10 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 
 @Service
@@ -22,21 +19,26 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     private ArticuloRepository articuloRepository;
 
     @Transactional
-    public void altaArticulo(DTOArticuloAlta dto){ // TODO - Es void
+    public void altaArticulo(DTOArticuloAlta dto){
         try{
+            List<Articulo> articulos = articuloRepository.findAll(); //Encuentra todos los artículos
+            for (Articulo articulo : articulos){
+                System.out.println(articulo.getNombre() + " y " + dto.getNombre());
+                if (Objects.equals(articulo.getNombre(), dto.getNombre()))
+                    throw new RuntimeException("Ya existe un artículo con este nombre");
+            }
 
             //Decidir modelo de inventario
             ArticuloModeloInventario modeloInventario;
             switch (dto.getModeloNombre()){
                 case "LoteFijo" -> {
-                    modeloInventario = new ArticuloModeloLoteFijo(dto.getStockSeguridad(), dto.getLoteOptimo(), dto.getPuntoPedido());
+                    modeloInventario = new ArticuloModeloLoteFijo(dto.getLoteOptimo(), dto.getPuntoPedido());
                 }
                 case "IntervaloFijo" ->{
-                    modeloInventario = new ArticuloModeloIntervaloFijo(dto.getStockSeguridad(), LocalDate.now().plusDays(dto.getIntervaloPedido()) , dto.getIntervaloPedido(), dto.getInventarioMaximo());
+                    modeloInventario = new ArticuloModeloIntervaloFijo(LocalDate.now().plusDays(dto.getIntervaloPedido()) , dto.getIntervaloPedido(), dto.getInventarioMaximo());
                 }
                 default -> throw new RuntimeException("Modelo desconocido");
             }
-
 
             // Crear artículo
             Articulo articulo = new Articulo(
@@ -55,21 +57,24 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     @Transactional
     public List<DTOArticuloListado> listAll(){
         try{
-            List<Articulo> articulos = articuloRepository.findAll();
-            List<DTOArticuloListado> dtos = new ArrayList<>();
+            List<Articulo> articulos = articuloRepository.findAll(); //Encuentra todos los artículos
+            List<DTOArticuloListado> dtos = new ArrayList<>(); //Crea el array de respuesta
+
+            // Por cada artículo vamos a crear un DTO que agregamos al array de respuesta
             for(Articulo articulo : articulos){
-                DTOArticuloListado dto = new DTOArticuloListado(
-                        articulo.getId(), articulo.getNombre(), articulo.getStock(),
-                        "modelo prueba", new Date(), 0, // TODO - Modelo inventario
-                        articulo.getProvPred().getId(), articulo.getProvPred().getProveedorNombre()
-                );
-                dtos.add(dto);
+                DTOArticuloListado dto = crearDtoListado(articulo); // Hacemos el dto
+                dtos.add(dto); // Agregamos el dto al array de respuesta
             }
             return dtos;
         }
         catch (Exception e) {
-            return null;
+            throw new RuntimeException(e);
         }
+    }
+
+    @Transactional
+    public void bajaArticulo(Long id){         // TODO - Baja con estado?
+
     }
 
     // Obtiene toda la información del artículo para mostrarla en detalle
@@ -88,7 +93,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             return dto;
         }
         catch (Exception e) {
-            return null;
+            throw new RuntimeException(e);
         }
     }
 
@@ -115,7 +120,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             update(idArt, articulo);
         }
         catch (Exception e) {
-
+            throw new RuntimeException(e);
         }
     }
 
@@ -146,7 +151,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             //Guardar cambios
             update(idArt, articulo);
         } catch (Exception e) {
-
+            throw new RuntimeException(e);
         }
     }
 
@@ -155,5 +160,27 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         Optional<Articulo> optArticulo = articuloRepository.findById(idArt);
         if (optArticulo.isEmpty()) throw new Exception("No se encuentra el artículo");
         return optArticulo.get();
+    }
+
+    private DTOArticuloListado crearDtoListado(Articulo articulo){
+        Long provPredId;
+        String provPredNom;
+
+        //Chequeamos que el proveedor predeterminado exista
+        if (articulo.getProvPred() == null){
+            provPredId = 0L;
+            provPredNom = "Sin proveedor predeterminado";
+        } else {
+            provPredId = articulo.getProvPred().getId();
+            provPredNom = articulo.getProvPred().getProveedorNombre();
+        }
+
+        // Creamos el dto en sí
+        DTOArticuloListado dto = new DTOArticuloListado(
+                articulo.getId(), articulo.getNombre(), articulo.getStock(),
+                "modelo prueba", new Date(), 0, // TODO - Modelo inventario
+                provPredId, provPredNom
+        );
+        return dto;
     }
 }

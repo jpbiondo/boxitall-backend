@@ -1,7 +1,7 @@
 package com.boxitall.boxitall.entities;
 
 import com.boxitall.boxitall.exceptions.BadArticle;
-import jakarta.persistence.Entity;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.Date;
@@ -14,6 +14,7 @@ import java.util.List;
 @Setter
 public class Articulo extends BaseEntity {
     private String nombre;
+    @Column(length = 1500) // 1500 caracteres de descripción (una guasada)
     private String descripcion;
     private float costoAlmacenamiento;
     private float demanda;
@@ -26,6 +27,8 @@ public class Articulo extends BaseEntity {
     //Relaciones
     private Proveedor provPred;
     private List<ArticuloProveedor> artProveedores;
+
+    @OneToOne(cascade = CascadeType.ALL)
     private ArticuloModeloInventario modeloInventario;
 
     public Articulo(String nombre, String descripcion, float costoAlmacenamiento, float demanda, float demandaDesviacionEstandar, float nivelServicio, float stock, ArticuloModeloInventario modeloInventario) throws BadArticle {
