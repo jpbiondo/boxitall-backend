@@ -1,4 +1,4 @@
-package com.boxitall.boxitall.dtos;
+package com.boxitall.boxitall.dtos.articulo;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

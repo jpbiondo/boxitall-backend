@@ -1,10 +1,8 @@
-package com.boxitall.boxitall.dtos;
+package com.boxitall.boxitall.dtos.articulo;
 
 import com.boxitall.boxitall.entities.Proveedor;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.Date;
 
 @Getter
 @Setter

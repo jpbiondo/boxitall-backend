@@ -1,6 +1,6 @@
 package com.boxitall.boxitall.controllers;
 
-import com.boxitall.boxitall.dtos.DTOArticuloAlta;
+import com.boxitall.boxitall.dtos.articulo.DTOArticuloAlta;
 import com.boxitall.boxitall.entities.Articulo;
 import com.boxitall.boxitall.services.ArticuloService;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,8 +1,8 @@
 package com.boxitall.boxitall.services;
 
-import com.boxitall.boxitall.dtos.DTOArticuloAlta;
-import com.boxitall.boxitall.dtos.DTOArticuloDetalle;
-import com.boxitall.boxitall.dtos.DTOArticuloListado;
+import com.boxitall.boxitall.dtos.articulo.DTOArticuloAlta;
+import com.boxitall.boxitall.dtos.articulo.DTOArticuloDetalle;
+import com.boxitall.boxitall.dtos.articulo.DTOArticuloListado;
 import com.boxitall.boxitall.entities.*;
 import com.boxitall.boxitall.repositories.ArticuloRepository;
 import jakarta.transaction.Transactional;
