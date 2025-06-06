@@ -2,6 +2,7 @@ package com.boxitall.boxitall.services;
 
 
 import com.boxitall.boxitall.entities.Articulo;
+import com.boxitall.boxitall.entities.OrdenCompra;
 import com.boxitall.boxitall.entities.Proveedor;
 import com.boxitall.boxitall.repositories.ArticuloRepository;
 import com.boxitall.boxitall.repositories.OrdenCompraRepository;
@@ -61,10 +62,10 @@ public class ProveedorService extends BaseEntityServiceImpl<Proveedor, Long> {
                     throw new Exception("No se puede dar de baja el proveedor porque es el proveedor predeterminado de algunos artículos.");
                 }
                 // Verifica si el proveedor tiene una orden de compra pendiente o en curso
-               /* boolean tieneOrdenPendiente = ordenCompraRepository.existsByProveedorAndEstadoIn(proveedor, List.of("Pendiente", "En Curso"));
-                if (tieneOrdenPendiente) {
-                    throw new Exception("No se puede dar de baja el proveedor porque tiene órdenes de compra pendientes o en curso.");
-                }*/
+                List<OrdenCompra> ordenesActivas = ordenCompraRepository.findOrdenesActivasByProveedor(proveedor);
+                if (!ordenesActivas.isEmpty()) {
+                    throw new Exception("El proveedor tiene órdenes de compra activas (pendientes o enviadas) y no puede ser dado de baja.");
+                }
                 proveedor.setProveedorFechaBaja(new Date());
                 proveedorRepository.save(proveedor);
                 return true;
