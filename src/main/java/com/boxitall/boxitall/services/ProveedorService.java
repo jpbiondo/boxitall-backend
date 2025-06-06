@@ -61,10 +61,10 @@ public class ProveedorService extends BaseEntityServiceImpl<Proveedor, Long> {
                     throw new Exception("No se puede dar de baja el proveedor porque es el proveedor predeterminado de algunos artículos.");
                 }
                 // Verifica si el proveedor tiene una orden de compra pendiente o en curso
-                boolean tieneOrdenPendiente = ordenCompraRepository.existsByProveedorAndEstadoIn(proveedor, List.of("Pendiente", "En Curso"));
+               /* boolean tieneOrdenPendiente = ordenCompraRepository.existsByProveedorAndEstadoIn(proveedor, List.of("Pendiente", "En Curso"));
                 if (tieneOrdenPendiente) {
                     throw new Exception("No se puede dar de baja el proveedor porque tiene órdenes de compra pendientes o en curso.");
-                }
+                }*/
                 proveedor.setProveedorFechaBaja(new Date());
                 proveedorRepository.save(proveedor);
                 return true;
