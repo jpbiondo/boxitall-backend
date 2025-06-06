@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface OrdenCompraRepository extends BaseEntityRepository<OrdenCompra, Long>{
-    boolean existsByProveedorAndEstadoIn(Proveedor proveedor, List<String> estados);
+   // boolean existsByProveedorAndEstadoIn(Proveedor proveedor, List<String> estados);
 }

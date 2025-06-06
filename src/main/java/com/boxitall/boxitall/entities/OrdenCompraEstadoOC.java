@@ -9,18 +9,19 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.Date;
-
 @Entity
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
-public class OrdenCompra extends BaseEntity {
-    private Date fechaInicio;
 
+public class OrdenCompraEstadoOC extends BaseEntity{
+   private Date fechaFin;
+   private Date fechaInicio;
     @ManyToOne
-    @JoinColumn(name = "proveedor_id")
-    private Proveedor proveedor;
-
-    //private String estado; //revisar, lo puse para hacer la logica de que no puedo dar de baja un proveedor si hay una oc pendiente
+    @JoinColumn
+    private EstadoOrdenCompra estado;
+    @ManyToOne
+    @JoinColumn
+    private OrdenCompra ordenCompra;
 }
