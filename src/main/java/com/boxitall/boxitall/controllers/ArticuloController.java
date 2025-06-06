@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @CrossOrigin(origins = "*")
-@RequestMapping("/IDarticulo")
+@RequestMapping("/articulo")
 public class ArticuloController extends BaseEntityControllerImpl<Articulo, ArticuloService>{
 
     @Autowired
