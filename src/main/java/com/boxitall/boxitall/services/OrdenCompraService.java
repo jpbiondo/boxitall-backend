@@ -14,7 +14,9 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 @Service
 public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long> {
@@ -40,6 +42,7 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
         // Crear la orden de compra
         OrdenCompra orden = new OrdenCompra();
         orden.setFechaInicio(new Date());
+        orden.setProveedor(proveedor);
         orden = ordenCompraRepository.save(orden);
         // EstadoActual
         OrdenCompraEstadoOC estadoactual = new OrdenCompraEstadoOC();
@@ -49,10 +52,20 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
         estadoactual.setFechaFin(null);
         ordenCompraEstadoOCRepository.save(estadoactual);
         // Delegar la creacion de los detalles?
+        List<String> errores = new ArrayList<>();
+
         for (DTOOrdenCompraArticulo detalleDto : ordencompradto.getDetallesarticulo()) {
-            ordenCompraArticuloService.altaDetalle(detalleDto, orden);
+            try {
+                ordenCompraArticuloService.altaDetalle(detalleDto, orden);
+            } catch (Exception e) {
+                errores.add("Artículo ID " + detalleDto.getIDarticulo() + ": " + e.getMessage());
+            }
         }
-        return ordenCompraRepository.save(orden);
+
+        if (!errores.isEmpty()) {
+            throw new RuntimeException("Orden creada parcialmente. Errores: " + String.join("; ", errores));
+        }
+        return orden;
     }
     @Transactional
     public void cancelarOrdenCompra(Long ordenCompraId) {
