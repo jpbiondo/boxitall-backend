@@ -3,7 +3,9 @@ package com.boxitall.boxitall.entities;
 import com.boxitall.boxitall.exceptions.BadArticle;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -25,7 +27,10 @@ public class Articulo extends BaseEntity {
     private Date fechaBaja;
 
     //Relaciones
+    @OneToOne
     private Proveedor provPred;
+
+    @OneToMany(cascade = CascadeType.ALL)
     private List<ArticuloProveedor> artProveedores;
 
     @OneToOne(cascade = CascadeType.ALL)

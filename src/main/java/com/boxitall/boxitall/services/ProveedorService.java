@@ -35,7 +35,7 @@ public class ProveedorService extends BaseEntityServiceImpl<Proveedor, Long> {
             }
             Proveedor savedProveedor = proveedorRepository.save(proveedor);
             // Asegurarse de que el proveedor esté asociado a al menos un artículo
-            articuloService.addProveedor(savedProveedor, idArt);
+            articuloService.addProveedor(savedProveedor.getId(), idArt);
             return savedProveedor;
         }
         catch(Exception e){

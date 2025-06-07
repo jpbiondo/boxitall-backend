@@ -5,6 +5,7 @@ import com.boxitall.boxitall.dtos.articulo.DTOArticuloDetalle;
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloListado;
 import com.boxitall.boxitall.entities.*;
 import com.boxitall.boxitall.repositories.ArticuloRepository;
+import com.boxitall.boxitall.repositories.ProveedorRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,9 @@ import java.util.*;
 public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     @Autowired
     private ArticuloRepository articuloRepository;
+
+    @Autowired
+    private ProveedorRepository proveedorRepository;
 
     @Transactional
     public void altaArticulo(DTOArticuloAlta dto){
@@ -98,21 +102,26 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     }
 
     @Transactional
-    public void addProveedor(Proveedor proveedor, Long idArt){
+    public void addProveedor(Long idProveedor, Long idArt){
         try{
             //Encontrar el Artículo
             Articulo articulo = encontrarArticulo(idArt);
+            //Encontrar el Proveedor
+            Proveedor proveedor = encontrarProveedor(idProveedor);
 
             //checkear que no esté ya agregado el proveedor
             List<ArticuloProveedor> artProvs = articulo.getArtProveedores();
-            for(ArticuloProveedor artProv: artProvs){
-                if (artProv.getProveedor() == proveedor){
-                    throw new Exception("El proveedor ya existe para este artículo");
+            if (artProvs != null){
+                for(ArticuloProveedor artProv: artProvs){
+                    if (artProv.getProveedor() == proveedor){
+                        throw new Exception("El proveedor ya existe para este artículo");
+                    }
                 }
             }
 
             // Agregar ArtículoProveedor
             ArticuloProveedor artProv = new ArticuloProveedor(); //TODO atributos ArticuloProveedor
+            artProv.setProveedor(proveedor);
             artProvs.add(artProv);
             articulo.setArtProveedores(artProvs);
 
@@ -125,22 +134,25 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     }
 
     @Transactional
-    public void setProveedorPred(Proveedor proveedor, Long idArt){
+    public void setProveedorPred(Long idProveedor, Long idArt){
         try{
             //Encontrar el Artículo
             Articulo articulo = encontrarArticulo(idArt);
+            //Encontrar el Proveedor
+            Proveedor proveedor = encontrarProveedor(idProveedor);         // TODO - Checkear esta línea y la siguiente
 
             //checkear que ya esté agregado el proveedor
-            boolean presente = false;
-            ArticuloProveedor artProvPred;
+            boolean provee = false;
             List<ArticuloProveedor> artProvs = articulo.getArtProveedores();
             for(ArticuloProveedor artProv: artProvs){
                 if (artProv.getProveedor() == proveedor){
-                    presente = true;
+                    provee = true;
                     break;
                 }
             }
-            if (!presente) throw new Exception("El proveedor ingresado no provee este artículo");
+            if (!provee) throw new Exception("El proveedor ingresado no provee este artículo");
+
+            if (articulo.getProvPred() == proveedor) throw new RuntimeException("El proveedor ingresado ya es proveedor predeterminado de este artículo"); // TODO - Better handling
 
             //Settear proveedor
             articulo.setProvPred(proveedor);
@@ -160,6 +172,13 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         Optional<Articulo> optArticulo = articuloRepository.findById(idArt);
         if (optArticulo.isEmpty()) throw new Exception("No se encuentra el artículo");
         return optArticulo.get();
+    }
+
+    // Encuentra un proveedor que puede o no estar
+    private Proveedor encontrarProveedor(Long idProv) throws Exception {
+        Optional<Proveedor> optProveedor = proveedorRepository.findById(idProv);
+        if (optProveedor.isEmpty()) throw new Exception("No se encuentra el proveedor");
+        return optProveedor.get();
     }
 
     private DTOArticuloListado crearDtoListado(Articulo articulo){

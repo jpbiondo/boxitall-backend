@@ -27,8 +27,8 @@ public class VentaController extends BaseEntityControllerImpl<Venta, VentaServic
     }
 
     @Override
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getOne(@PathVariable Long id) {
+    @GetMapping("/getOne")
+    public ResponseEntity<?> getOne(@RequestParam Long id) {
         try {
             return ResponseEntity.status(HttpStatus.OK).body(service.getOne(id));
         } catch (Exception e) {
