@@ -1,10 +1,12 @@
-package com.boxitall.boxitall.dtos;
+package com.boxitall.boxitall.dtos.articulo;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Getter
@@ -16,7 +18,7 @@ public class DTOArticuloListado {
     private String nombre;
     private float stock;
     private String modeloInventario;
-    private Date fechaProximoPedido;
+    private LocalDateTime fechaProximoPedido;
     private float stockProximoPedido;
     private Long proveedorPredeterminadoId;
     private String proveedorPredeterminadoNombre;

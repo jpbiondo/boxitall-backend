@@ -1,6 +1,6 @@
 package com.boxitall.boxitall.entities;
 
-import jakarta.persistence.Entity;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,5 +24,6 @@ public class ArticuloProveedor extends BaseEntity{
     private Date fechaBaja;
 
     //Relaciones
+    @ManyToOne
     private Proveedor proveedor;
 }

@@ -3,6 +3,7 @@ package com.boxitall.boxitall.services;
 import com.boxitall.boxitall.entities.BaseEntity;
 import com.boxitall.boxitall.repositories.BaseEntityRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,7 @@ import java.util.Optional;
 
 @Service
 public abstract class BaseEntityServiceImpl<E extends BaseEntity, ID extends Serializable> implements BaseEntityService<E,ID> {
+    @Autowired
     protected BaseEntityRepository<E, ID> baseEntityRepository;
 
     @Override

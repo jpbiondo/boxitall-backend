@@ -1,7 +1,9 @@
 package com.boxitall.boxitall.controllers;
 
-import com.boxitall.boxitall.dtos.DTOArticuloAlta;
+import com.boxitall.boxitall.dtos.articulo.DTOArticuloAlta;
+import com.boxitall.boxitall.dtos.articulo.DTOArticuloDetalle;
 import com.boxitall.boxitall.entities.Articulo;
+import com.boxitall.boxitall.entities.Proveedor;
 import com.boxitall.boxitall.services.ArticuloService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -10,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @CrossOrigin(origins = "*")
-@RequestMapping("/IDarticulo")
+@RequestMapping("/articulo")
 public class ArticuloController extends BaseEntityControllerImpl<Articulo, ArticuloService>{
 
     @Autowired
@@ -26,6 +28,17 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
         }
     }
 
+    @GetMapping("/getDetalles")
+    public ResponseEntity<?> getDetalles(@RequestParam Long id){
+        try{
+            DTOArticuloDetalle dtoDetalle = servicio.getArticuloDetalle(id);
+            return ResponseEntity.status(HttpStatus.OK).body(dtoDetalle);
+        }
+        catch (Exception e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\" error\":\"Error," + e.getMessage() + "}\"");
+        }
+    }
+
     @PostMapping("/add")
     public ResponseEntity<?> addArticle(@RequestBody DTOArticuloAlta dtoAlta){
         try{
@@ -33,6 +46,26 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
             return ResponseEntity.status(HttpStatus.OK).body("{\" Artículo añadido correctamente }\"");
         }
         catch (Exception e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\" error\":\"Error," + e.getMessage() + "}\"");
+        }
+    }
+
+    @PostMapping("/addProveedor")
+    public ResponseEntity<?> addProveedor(@RequestParam Long prov, @RequestParam Long art){
+        try{
+            servicio.addProveedor(prov,art);
+            return ResponseEntity.status(HttpStatus.OK).body("{\" Proveedor añadido al artículo correctamente }\"");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\" error\":\"Error," + e.getMessage() + "}\"");
+        }
+    }
+
+    @PostMapping("/addProveedorPredeterminado")
+    public ResponseEntity<?> addProveedorPredeterminado(@RequestParam Long prov, @RequestParam Long art){
+        try{
+            servicio.setProveedorPred(prov,art);
+            return ResponseEntity.status(HttpStatus.OK).body("{\" Proveedor establecido como predeterminado de manera exitosa }\"");
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\" error\":\"Error," + e.getMessage() + "}\"");
         }
     }
