@@ -1,6 +1,7 @@
 package com.boxitall.boxitall.controllers;
 
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloAlta;
+import com.boxitall.boxitall.dtos.articulo.DTOArticuloDetalle;
 import com.boxitall.boxitall.entities.Articulo;
 import com.boxitall.boxitall.entities.Proveedor;
 import com.boxitall.boxitall.services.ArticuloService;
@@ -27,6 +28,17 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
         }
     }
 
+    @GetMapping("/getDetalles")
+    public ResponseEntity<?> getDetalles(@RequestParam Long id){
+        try{
+            DTOArticuloDetalle dtoDetalle = servicio.getArticuloDetalle(id);
+            return ResponseEntity.status(HttpStatus.OK).body(dtoDetalle);
+        }
+        catch (Exception e){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\" error\":\"Error," + e.getMessage() + "}\"");
+        }
+    }
+
     @PostMapping("/add")
     public ResponseEntity<?> addArticle(@RequestBody DTOArticuloAlta dtoAlta){
         try{
@@ -48,7 +60,7 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
         }
     }
 
-    @PostMapping("/addProveedorPredeterminado{idProveedor}{idArticulo}")
+    @PostMapping("/addProveedorPredeterminado")
     public ResponseEntity<?> addProveedorPredeterminado(@RequestParam Long prov, @RequestParam Long art){
         try{
             servicio.setProveedorPred(prov,art);
