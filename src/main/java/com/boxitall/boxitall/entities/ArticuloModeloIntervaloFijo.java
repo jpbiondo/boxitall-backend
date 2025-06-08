@@ -6,7 +6,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Getter
 @Setter
@@ -20,7 +19,7 @@ public class ArticuloModeloIntervaloFijo extends ArticuloModeloInventario {
 
     //Hecho a mano por problemas con los constructors de lombok
     public ArticuloModeloIntervaloFijo(LocalDateTime fechaProximoPedido, int intervaloPedido, float inventarioMaximo){
-        super(0.0f); // TODO sacar el stock de seguridad de acá, debería ser calculado en la clase base
+        super(0.0f); // TODO sacar el stock de seguridad de acá, debería ser calculado
         this.fechaProximoPedido = fechaProximoPedido;
         this.intervaloPedido = intervaloPedido;
         this.inventarioMaximo = inventarioMaximo;

@@ -24,9 +24,6 @@ public class VentaService extends BaseEntityServiceImpl<Venta, Long> {
     @Transactional
     public void altaVenta(DTOVentaAlta dto){
         try{
-            Venta venta = new Venta();
-            venta.setFechaVenta(new Date());
-
             List<VentaDetalle> detalles = new ArrayList<>();
             int i = 0; // Contador para los renglones
             for (Long articuloId : dto.getId_cantidad().keySet()){
@@ -44,14 +41,15 @@ public class VentaService extends BaseEntityServiceImpl<Venta, Long> {
 
                 // TODO - Hacer la Orden de Compra
 
-                VentaDetalle detalle = new VentaDetalle(cantCompra, i, articulo, venta);
+                VentaDetalle detalle = new VentaDetalle(cantCompra, i, articulo);
                 detalles.add(detalle);
                 i++;
             }
             // Verificamos que la venta tenga al menos un detalle (al menos 1 artículo elegido)
             if (i == 0) throw new RuntimeException("No hay artículos seleccionados");
 
-            venta.setDetalle(detalles);
+            Venta venta = new Venta(new Date(), detalles);
+
             repository.save(venta);
 
         } catch (Exception e) {

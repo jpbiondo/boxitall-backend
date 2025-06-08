@@ -21,8 +21,4 @@ public class VentaDetalle extends BaseEntity{
     //Relaciones
     @ManyToOne (optional = false, cascade = CascadeType.REFRESH)
     private Articulo articulo;
-
-    @ToString.Exclude
-    @ManyToOne(optional = false)
-    private Venta venta;
 }
