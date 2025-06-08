@@ -19,6 +19,6 @@ public class Venta extends BaseEntity {
     private Date fechaVenta;
 
     //Relaciones
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "venta")
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private List<VentaDetalle> detalle = new ArrayList<>();
 }

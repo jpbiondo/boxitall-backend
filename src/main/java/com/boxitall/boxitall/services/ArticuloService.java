@@ -192,17 +192,6 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
     //Arma un DTO de listado (tiene menos info)
     private DTOArticuloListado crearDtoListado(Articulo articulo){
-        Long provPredId;
-        String provPredNom;
-
-        // Chequeamos que el proveedor predeterminado exista
-        if (articulo.getProvPred() == null){
-            provPredId = 0L;
-            provPredNom = "Sin proveedor predeterminado";
-        } else {
-            provPredId = articulo.getProvPred().getId();
-            provPredNom = articulo.getProvPred().getProveedorNombre();
-        }
 
         // Obtenemos el nombre del modelo, la fecha (estimada) y la cantidad (estimada) del próximo pedido
         MiniDTOModeloInventario miniDTOModelo = datosModeloInventario(articulo.getModeloInventario());
