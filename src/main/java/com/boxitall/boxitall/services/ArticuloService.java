@@ -1,5 +1,6 @@
 package com.boxitall.boxitall.services;
 
+import com.boxitall.boxitall.dtos.articulo.DTOArticuloAddProveedor;
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloAlta;
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloDetalle;
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloListado;
@@ -108,12 +109,12 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     }
 
     @Transactional
-    public void addProveedor(Long idProveedor, Long idArt){
+    public void addProveedor(DTOArticuloAddProveedor dto){
         try{
             //Encontrar el Artículo
-            Articulo articulo = encontrarArticulo(idArt);
+            Articulo articulo = encontrarArticulo(dto.getArticuloId());
             //Encontrar el Proveedor
-            Proveedor proveedor = encontrarProveedor(idProveedor);
+            Proveedor proveedor = encontrarProveedor(dto.getProveedorId());
 
             //checkear que no esté ya agregado el proveedor
             List<ArticuloProveedor> artProvs = articulo.getArtProveedores();
@@ -130,10 +131,15 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             ArticuloProveedor artProv = new ArticuloProveedor(); //TODO atributos ArticuloProveedor
             artProv.setProveedor(proveedor);
             artProvs.add(artProv);
+            artProv.setCargoPedido(dto.getCargoPedido());
+            artProv.setCostoCompra(dto.getCostoCompra());
+            artProv.setDemoraEntrega(dto.getDemoraEntrega());
+            artProv.setPrecioUnitario(dto.getPrecioUnitario());
+            artProv.setPuntoPedido(dto.getPuntoPedido());
             articulo.setArtProveedores(artProvs);
 
             // Guardar cambios
-            update(idArt, articulo);
+            update(dto.getArticuloId(), articulo);
         }
         catch (Exception e) {
             throw new RuntimeException(e);
@@ -174,6 +180,30 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         }
     }
 
+    @Transactional
+    public void quitarProveedor(Long idProveedor, Long idArt){
+        try{
+            Articulo articulo = encontrarArticulo(idArt);
+            Proveedor proveedor = encontrarProveedor(idProveedor);
+
+            // Encontrar el artículoProveedor de ese proveedor
+            ArticuloProveedor articuloProveedor = null;
+            for (ArticuloProveedor artProv : articulo.getArtProveedores()){
+                if (artProv.getProveedor() == proveedor){
+                    articuloProveedor = artProv;
+                    break;
+                }
+            }
+            if (articuloProveedor == null) throw new RuntimeException("El proveedor ingresado no provee este artículo");
+
+            articulo.getArtProveedores().remove(articuloProveedor);
+            update(idArt, articulo);
+
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
     // -------- Funciones auxiliares
 
     // Encuentra un artículo que puede o no estar
