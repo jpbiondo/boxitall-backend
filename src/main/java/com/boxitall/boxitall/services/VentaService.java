@@ -11,6 +11,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -69,7 +70,7 @@ public class VentaService extends BaseEntityServiceImpl<Venta, Long> {
             // Verificamos que la venta tenga al menos un detalle (al menos 1 artículo elegido)
             if (renglon == 0) throw new RuntimeException("No hay artículos seleccionados");
 
-            Venta venta = new Venta(new Date(), detalles);
+            Venta venta = new Venta(LocalDateTime.now(), detalles);
 
             repository.save(venta);
 
@@ -146,7 +147,7 @@ public class VentaService extends BaseEntityServiceImpl<Venta, Long> {
         try{
             List<OrdenCompra> ordenesCompra = ocService.findAll();
             for(OrdenCompra oc : ordenesCompra){
-                // TODO seguir con esto. Buscar el estado de la OC
+                // TODO seguir con esto. Buscar el estado de la OC, pero está mal la navegabilidad
             }
             return false;
         }

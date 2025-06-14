@@ -14,6 +14,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -41,7 +42,7 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
 
         // Crear la orden de compra
         OrdenCompra orden = new OrdenCompra();
-        orden.setFechaInicio(new Date());
+        orden.setFechaInicio(LocalDateTime.now());
         orden.setProveedor(proveedor);
         orden = ordenCompraRepository.save(orden);
         // EstadoActual

@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Entity
 @AllArgsConstructor
@@ -21,7 +21,7 @@ public class ArticuloProveedor extends BaseEntity{
     private float precioUnitario;
     private float puntoPedido;
 
-    private Date fechaBaja;
+    private LocalDateTime fechaBaja;
 
     //Relaciones
     @ManyToOne

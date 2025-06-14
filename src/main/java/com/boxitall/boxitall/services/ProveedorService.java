@@ -11,7 +11,7 @@ import com.boxitall.boxitall.repositories.ProveedorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -69,7 +69,7 @@ public class ProveedorService extends BaseEntityServiceImpl<Proveedor, Long> {
                 if (!ordenesActivas.isEmpty()) {
                     throw new Exception("El proveedor tiene órdenes de compra activas (pendientes o enviadas) y no puede ser dado de baja.");
                 }
-                proveedor.setProveedorFechaBaja(new Date());
+                proveedor.setProveedorFechaBaja(LocalDateTime.now());
                 proveedorRepository.save(proveedor);
                 return true;
             }else {

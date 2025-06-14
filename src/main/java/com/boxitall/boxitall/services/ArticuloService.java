@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.*;
 
+// TODO - IMPORTANTE: No estoy chequeando que artículo.fechaBaja == null en ningún lado
 
 @Service
 public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
@@ -79,9 +80,25 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         }
     }
 
+        /*
+            Hay que chequear que:
+            - no esté ya dado de baja
+            - no tenga OC en estado != FINALIZADA || CANCELADA
+            creo que es eso nada más
+         */
+    // Da de baja el artículo mediante articulo.fechaBaja
     @Transactional
-    public void bajaArticulo(Long id){         // TODO - Baja con estado?
+    public void bajaArticulo(Long id){
+        try{
+            Articulo articulo = encontrarArticulo(id);
+            // Chequeamos que no esté dado de baja
+            if (articulo.getFechaBaja().isBefore(LocalDateTime.now()))
+                throw new RuntimeException("El artículo ya está dado de baja");
 
+            articulo.setFechaBaja(LocalDateTime.now());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     // Obtiene toda la información del artículo para mostrarla en detalle
@@ -298,13 +315,13 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         switch (modeloNombre){
             case "LoteFijo" -> {
                 ArticuloModeloLoteFijo modeloEspecifico = (ArticuloModeloLoteFijo) modeloInventario;
-                proxPedido = LocalDateTime.now();           // TODO - Fecha según la demanda estimada
+                proxPedido = LocalDateTime.now(); // TODO - Este valor no se usa
                 stockPedido = modeloEspecifico.getLoteOptimo();         // TODO - No sé si es esto, temporal
             }
             case "IntervaloFijo" -> {
                 ArticuloModeloIntervaloFijo modeloEspecifico = (ArticuloModeloIntervaloFijo) modeloInventario;
                 proxPedido = modeloEspecifico.getFechaProximoPedido();
-                stockPedido = 20f;          // TODO - Calcular el estimado
+                stockPedido = 0; // TODO - Este valor no se usa
             }
             default -> throw new RuntimeException("El artículo no posee modelo de inventario");
         }

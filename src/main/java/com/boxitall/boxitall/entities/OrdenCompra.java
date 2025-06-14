@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Entity
 @NoArgsConstructor
@@ -16,7 +16,7 @@ import java.util.Date;
 @Getter
 @Setter
 public class OrdenCompra extends BaseEntity {
-    private Date fechaInicio;
+    private LocalDateTime fechaInicio;
 
     @ManyToOne
     @JoinColumn(name = "proveedor_id")
