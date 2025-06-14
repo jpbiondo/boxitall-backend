@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.*;
 
-// TODO - IMPORTANTE: No estoy chequeando que artículo.fechaBaja == null en ningún lado
 
 @Service
 public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
@@ -80,21 +79,14 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         }
     }
 
-        /*
-            Hay que chequear que:
-            - no esté ya dado de baja
-            - no tenga OC en estado != FINALIZADA || CANCELADA
-            creo que es eso nada más
-         */
     // Da de baja el artículo mediante articulo.fechaBaja
     @Transactional
     public void bajaArticulo(Long id){
         try{
             Articulo articulo = encontrarArticulo(id);
             // Chequeamos que no esté dado de baja
-            if (articulo.getFechaBaja().isBefore(LocalDateTime.now()))
-                throw new RuntimeException("El artículo ya está dado de baja");
-
+            checkBaja(articulo);
+            // TODO Chequear la OC en estado != FINALIZADA || CANCELADA
             articulo.setFechaBaja(LocalDateTime.now());
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -133,6 +125,9 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             //Encontrar el Proveedor
             Proveedor proveedor = encontrarProveedor(dto.getProveedorId());
 
+            // Checkear que el artículo no esté dado de baja
+            checkBaja(articulo);
+
             //checkear que no esté ya agregado el proveedor
             List<ArticuloProveedor> artProvs = articulo.getArtProveedores();
             if (artProvs != null){
@@ -142,7 +137,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
                     }
                 }
             }
-            else artProvs = new ArrayList<>();      // Está por un warning que tiraba, pero andaba igual con o sin
+            else artProvs = new ArrayList<>();      // Está por un warning que tiraba, pero andaba igual con o sin esta línea
 
             // Agregar ArtículoProveedor
             ArticuloProveedor artProv = new ArticuloProveedor(); //TODO atributos ArticuloProveedor
@@ -170,6 +165,8 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             Articulo articulo = encontrarArticulo(idArt);
             //Encontrar el Proveedor
             Proveedor proveedor = encontrarProveedor(idProveedor);
+
+            checkBaja(articulo);
 
             //checkear que ya esté agregado el proveedor
             boolean provee = false;
@@ -202,6 +199,8 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         try{
             Articulo articulo = encontrarArticulo(idArt);
             Proveedor proveedor = encontrarProveedor(idProveedor);
+
+            checkBaja(articulo);
 
             // Encontrar el artículoProveedor de ese proveedor
             ArticuloProveedor articuloProveedor = null;
@@ -332,4 +331,9 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         return dto;
     }
 
+    // Chequea que el artíuclo no esté de baja. En caso de estarlo, error
+    private void checkBaja(Articulo articulo) throws RuntimeException{
+        if (articulo.getFechaBaja().isBefore(LocalDateTime.now()))
+            throw new RuntimeException("El artículo está dado de baja");
+    }
 }
