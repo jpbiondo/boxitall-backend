@@ -30,7 +30,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         try{
             List<Articulo> articulos = articuloRepository.findAll(); //Encuentra todos los artículos
             for (Articulo articulo : articulos){
-                if (Objects.equals(articulo.getNombre(), dto.getNombre()))
+                if (Objects.equals(articulo.getNombre(), dto.getNombre()) && articulo.getFechaBaja() != null)
                     throw new RuntimeException("Ya existe un artículo con este nombre");
             }
 
