@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Entity
 @NoArgsConstructor
@@ -15,6 +15,6 @@ import java.util.Date;
 @Setter
 @Getter
 public class EstadoOrdenCompra extends BaseEntity{
-    private Date fechaBaja;
-    private String nombre;
+    private LocalDateTime fechaBaja;
+    private String nombre;  // PENDIENTE, ENVIADA, CANCELADA, FINALIZADA
 }

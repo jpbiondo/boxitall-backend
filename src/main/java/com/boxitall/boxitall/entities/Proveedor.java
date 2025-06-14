@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Entity
 @NoArgsConstructor
@@ -27,6 +27,6 @@ public class Proveedor extends BaseEntity {
     private String proveedorTelefono;
 
     @Column(name = "FechaBaja_proveedor")
-    private Date proveedorFechaBaja;
+    private LocalDateTime proveedorFechaBaja;
 
 }

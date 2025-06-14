@@ -30,7 +30,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         try{
             List<Articulo> articulos = articuloRepository.findAll(); //Encuentra todos los artículos
             for (Articulo articulo : articulos){
-                if (Objects.equals(articulo.getNombre(), dto.getNombre()))
+                if (Objects.equals(articulo.getNombre(), dto.getNombre()) && articulo.getFechaBaja() != null)
                     throw new RuntimeException("Ya existe un artículo con este nombre");
             }
 
@@ -79,9 +79,18 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         }
     }
 
+    // Da de baja el artículo mediante articulo.fechaBaja
     @Transactional
-    public void bajaArticulo(Long id){         // TODO - Baja con estado?
-
+    public void bajaArticulo(Long id){
+        try{
+            Articulo articulo = encontrarArticulo(id);
+            // Chequeamos que no esté dado de baja
+            checkBaja(articulo);
+            // TODO Chequear la OC en estado != FINALIZADA || CANCELADA
+            articulo.setFechaBaja(LocalDateTime.now());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     // Obtiene toda la información del artículo para mostrarla en detalle
@@ -116,6 +125,9 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             //Encontrar el Proveedor
             Proveedor proveedor = encontrarProveedor(dto.getProveedorId());
 
+            // Checkear que el artículo no esté dado de baja
+            checkBaja(articulo);
+
             //checkear que no esté ya agregado el proveedor
             List<ArticuloProveedor> artProvs = articulo.getArtProveedores();
             if (artProvs != null){
@@ -125,7 +137,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
                     }
                 }
             }
-            else artProvs = new ArrayList<>();      // Está por un warning que tiraba, pero andaba igual con o sin
+            else artProvs = new ArrayList<>();      // Está por un warning que tiraba, pero andaba igual con o sin esta línea
 
             // Agregar ArtículoProveedor
             ArticuloProveedor artProv = new ArticuloProveedor(); //TODO atributos ArticuloProveedor
@@ -153,6 +165,8 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             Articulo articulo = encontrarArticulo(idArt);
             //Encontrar el Proveedor
             Proveedor proveedor = encontrarProveedor(idProveedor);
+
+            checkBaja(articulo);
 
             //checkear que ya esté agregado el proveedor
             boolean provee = false;
@@ -185,6 +199,8 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         try{
             Articulo articulo = encontrarArticulo(idArt);
             Proveedor proveedor = encontrarProveedor(idProveedor);
+
+            checkBaja(articulo);
 
             // Encontrar el artículoProveedor de ese proveedor
             ArticuloProveedor articuloProveedor = null;
@@ -298,13 +314,13 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         switch (modeloNombre){
             case "LoteFijo" -> {
                 ArticuloModeloLoteFijo modeloEspecifico = (ArticuloModeloLoteFijo) modeloInventario;
-                proxPedido = LocalDateTime.now();           // TODO - Fecha según la demanda estimada
+                proxPedido = LocalDateTime.now(); // TODO - Este valor no se usa
                 stockPedido = modeloEspecifico.getLoteOptimo();         // TODO - No sé si es esto, temporal
             }
             case "IntervaloFijo" -> {
                 ArticuloModeloIntervaloFijo modeloEspecifico = (ArticuloModeloIntervaloFijo) modeloInventario;
                 proxPedido = modeloEspecifico.getFechaProximoPedido();
-                stockPedido = 20f;          // TODO - Calcular el estimado
+                stockPedido = 0; // TODO - Este valor no se usa
             }
             default -> throw new RuntimeException("El artículo no posee modelo de inventario");
         }
@@ -315,4 +331,9 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         return dto;
     }
 
+    // Chequea que el artíuclo no esté de baja. En caso de estarlo, error
+    private void checkBaja(Articulo articulo) throws RuntimeException{
+        if (articulo.getFechaBaja().isBefore(LocalDateTime.now()))
+            throw new RuntimeException("El artículo está dado de baja");
+    }
 }
