@@ -1,8 +1,6 @@
 package com.boxitall.boxitall.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,11 +12,13 @@ import lombok.Setter;
 @Getter
 @Setter
 public class OrdenCompraArticulo extends BaseEntity {
-    private float cantidad ;
-    @ManyToOne
-    @JoinColumn
-    private OrdenCompra ordenCompra;
-    @ManyToOne
-    @JoinColumn
+    @Column(nullable = false)
+    private float cantidad;
+
+    @Column(nullable = false)
+    private int renglon;
+
+    @ManyToOne (optional = false, cascade = CascadeType.REFRESH)
     private Articulo articulo;
+
 }
