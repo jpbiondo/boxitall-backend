@@ -1,7 +1,7 @@
 package com.boxitall.boxitall.services;
 
-import com.boxitall.boxitall.dtos.DTOOrdenCompra;
-import com.boxitall.boxitall.dtos.DTOOrdenCompraArticulo;
+import com.boxitall.boxitall.dtos.ordencompra.DTOOrdenCompra;
+import com.boxitall.boxitall.dtos.ordencompra.DTOOrdenCompraArticulo;
 import com.boxitall.boxitall.dtos.venta.DTOVenta;
 import com.boxitall.boxitall.dtos.venta.DTOVentaAlta;
 import com.boxitall.boxitall.dtos.venta.DTOVentaDetalle;
