@@ -80,4 +80,14 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\" error\":\"Error," + e.getMessage() + "}\"");
         }
     }
+
+    @DeleteMapping("/bajaArticulo")
+    public ResponseEntity<?> bajaArticulo(@RequestParam Long id){
+        try{
+            servicio.bajaArticulo(id);
+            return ResponseEntity.status(HttpStatus.OK).body("{\" Proveedor quitado para el artículo ingresado }\"");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\" error\":\"Error," + e.getMessage() + "}\"");
+        }
+    }
 }

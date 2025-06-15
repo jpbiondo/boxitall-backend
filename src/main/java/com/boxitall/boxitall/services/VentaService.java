@@ -6,6 +6,7 @@ import com.boxitall.boxitall.dtos.venta.DTOVenta;
 import com.boxitall.boxitall.dtos.venta.DTOVentaAlta;
 import com.boxitall.boxitall.dtos.venta.DTOVentaDetalle;
 import com.boxitall.boxitall.entities.*;
+import com.boxitall.boxitall.repositories.OrdenCompraRepository;
 import com.boxitall.boxitall.repositories.VentaRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,8 @@ public class VentaService extends BaseEntityServiceImpl<Venta, Long> {
     VentaRepository repository;
     @Autowired
     OrdenCompraService ocService;
+    @Autowired
+    OrdenCompraRepository ordenCompraRepository;
 
     @Transactional
     public void altaVenta(DTOVentaAlta dto){
@@ -50,7 +53,7 @@ public class VentaService extends BaseEntityServiceImpl<Venta, Long> {
                 Long provPredId = getProvPredId(articulo);
 
                 //Checkeamos si existe una Orden de compra pendiente o enviada para el artículo
-                boolean existeOCEnCurso = getOCEnCurso(articulo);
+                boolean existeOCEnCurso = checkOCActivas(articulo);
 
                 // Si es modelo de lote fijo y bajamos del punto de pedido y existe proveedor predeterminado, hacer Orden de Compra
                 if (modeloNombre.equals("LoteFijo") && provPredId > 0 && !existeOCEnCurso){
@@ -59,7 +62,7 @@ public class VentaService extends BaseEntityServiceImpl<Venta, Long> {
                         DTOOrdenCompraArticulo dtoOCA = new DTOOrdenCompraArticulo(modeloFijo.getLoteOptimo(), articuloId); // TODO - No tiene en cuenta el lote óptimo (habré querido decir stock?)
                         DTOOrdenCompra dtoOC = new DTOOrdenCompra(new ArrayList<>(), provPredId);
                         dtoOC.getDetallesarticulo().add(dtoOCA);
-                        ocService.altaOrdenCompra(dtoOC);           // TODO - no están dados de alta los estados, no se puede hacer
+                        ocService.altaOrdenCompra(dtoOC);
                     }
                 }
 
@@ -143,13 +146,10 @@ public class VentaService extends BaseEntityServiceImpl<Venta, Long> {
     }
 
     // Devuelve verdadero en caso de que exista una Orden de Compra en estado pendiente o enviada para este artículo, falso en caso contrario
-    private boolean getOCEnCurso(Articulo articulo){
+    private boolean checkOCActivas(Articulo articulo){
         try{
-            List<OrdenCompra> ordenesCompra = ocService.findAll();
-            for(OrdenCompra oc : ordenesCompra){
-                // TODO seguir con esto. Buscar el estado de la OC, pero está mal la navegabilidad
-            }
-            return false;
+            List<OrdenCompra> ordenesCompra = ordenCompraRepository.findOrdenesActivasByArticulo(articulo);
+            return !ordenesCompra.isEmpty();
         }
         catch (Exception e){
             throw new RuntimeException(e);

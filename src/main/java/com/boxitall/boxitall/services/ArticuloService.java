@@ -6,6 +6,7 @@ import com.boxitall.boxitall.dtos.articulo.DTOArticuloDetalle;
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloListado;
 import com.boxitall.boxitall.entities.*;
 import com.boxitall.boxitall.repositories.ArticuloRepository;
+import com.boxitall.boxitall.repositories.OrdenCompraRepository;
 import com.boxitall.boxitall.repositories.ProveedorRepository;
 import jakarta.transaction.Transactional;
 import lombok.Getter;
@@ -24,6 +25,9 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
     @Autowired
     private ProveedorRepository proveedorRepository;
+
+    @Autowired
+    private OrdenCompraRepository ordenCompraRepository;
 
     @Transactional
     public void altaArticulo(DTOArticuloAlta dto){
@@ -51,7 +55,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             Articulo articulo = new Articulo(
                     dto.getNombre(), dto.getDescripcion(),dto.getCostoAlmacenamiento(),
                     dto.getDemanda(),dto.getDemandaDesviacionEstandar(),dto.getNivelServicio(),
-                    dto.getStock(), modeloInventario          // TODO - Proveedor o estado?
+                    dto.getStock(), modeloInventario
             );
 
             // Guardar el artículo
@@ -86,7 +90,10 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             Articulo articulo = encontrarArticulo(id);
             // Chequeamos que no esté dado de baja
             checkBaja(articulo);
-            // TODO Chequear la OC en estado != FINALIZADA || CANCELADA
+
+            // Chequear que no tenga OC activas
+            checkOrdenesActivas(articulo);
+
             articulo.setFechaBaja(LocalDateTime.now());
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -140,7 +147,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             else artProvs = new ArrayList<>();      // Está por un warning que tiraba, pero andaba igual con o sin esta línea
 
             // Agregar ArtículoProveedor
-            ArticuloProveedor artProv = new ArticuloProveedor(); //TODO atributos ArticuloProveedor
+            ArticuloProveedor artProv = new ArticuloProveedor();
             artProv.setProveedor(proveedor);
             artProvs.add(artProv);
             artProv.setCargoPedido(dto.getCargoPedido());
@@ -177,9 +184,11 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
                     break;
                 }
             }
-            if (!provee) throw new Exception("El proveedor ingresado no provee este artículo");
+            if (!provee)
+                throw new Exception("El proveedor ingresado no provee este artículo");
 
-            if (articulo.getProvPred() == proveedor) throw new RuntimeException("El proveedor ingresado ya es proveedor predeterminado de este artículo"); // TODO - Better handling
+            if (articulo.getProvPred() == proveedor)
+                throw new RuntimeException("El proveedor ingresado ya es proveedor predeterminado de este artículo");
 
             //Settear proveedor
             articulo.setProvPred(proveedor);
@@ -335,5 +344,12 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     private void checkBaja(Articulo articulo) throws RuntimeException{
         if (articulo.getFechaBaja().isBefore(LocalDateTime.now()))
             throw new RuntimeException("El artículo está dado de baja");
+    }
+
+    // Chequea que el artíuclo no tenga OC activas. En caso de tenerlas, error
+    private void checkOrdenesActivas(Articulo articulo) throws RuntimeException{
+        List<OrdenCompra> ordenesCompra = ordenCompraRepository.findOrdenesActivasByArticulo(articulo);
+        if (!ordenesCompra.isEmpty())
+            throw new RuntimeException("Hay órdenes de compra activas, no puede darse de baja al artículo");
     }
 }
