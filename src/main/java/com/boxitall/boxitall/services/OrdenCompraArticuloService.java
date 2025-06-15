@@ -1,10 +1,7 @@
 package com.boxitall.boxitall.services;
 
 import com.boxitall.boxitall.dtos.ordencompra.DTOOrdenCompraArticulo;
-import com.boxitall.boxitall.entities.Articulo;
-import com.boxitall.boxitall.entities.OrdenCompra;
-import com.boxitall.boxitall.entities.OrdenCompraArticulo;
-import com.boxitall.boxitall.entities.OrdenCompraEstadoOC;
+import com.boxitall.boxitall.entities.*;
 import com.boxitall.boxitall.repositories.ArticuloRepository;
 import com.boxitall.boxitall.repositories.OrdenCompraArticuloRepository;
 import com.boxitall.boxitall.repositories.OrdenCompraEstadoOCRepository;
@@ -13,6 +10,8 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -44,7 +43,29 @@ public class OrdenCompraArticuloService extends BaseEntityServiceImpl<OrdenCompr
         OrdenCompraArticulo detalleArticulo = new OrdenCompraArticulo();
         detalleArticulo.setArticulo(articulo);
         detalleArticulo.setCantidad(detalledto.getCantidad());
-         return ordenCompraArticuloRepository.save(detalleArticulo);
+
+
+
+        // Obtener el modelo de inventario
+        String modeloNombre = articulo.getModeloInventario().getClass().toString();
+        int length = modeloNombre.length() - 1;
+        int index = 0;
+        for (int i = length; i > 0; i--) {
+            if (modeloNombre.charAt(i) == '.') {
+                index = i + 1 + 14;  // El +1 es para que no empiece desde el punto, el + 14 para que no incluya "ArticuloModelo"
+                break;
+            }
+        }
+        modeloNombre = modeloNombre.substring(index);
+        // Si es de intervalo fijo le settea la fecha de próximo pedido, si es otro no hace nada
+        if (modeloNombre.equals("IntervaloFijo")) {
+            ArticuloModeloIntervaloFijo modeloInventario = (ArticuloModeloIntervaloFijo) articulo.getModeloInventario();
+            // Trunca la fecha a días (para que sea al inicio del mismo) y le suma el intervalo de pedido
+            modeloInventario.setFechaProximoPedido(LocalDateTime.now().truncatedTo(ChronoUnit.DAYS).plusDays(modeloInventario.getIntervaloPedido()));
+        }
+
+
+        return ordenCompraArticuloRepository.save(detalleArticulo);
     }
 
 }

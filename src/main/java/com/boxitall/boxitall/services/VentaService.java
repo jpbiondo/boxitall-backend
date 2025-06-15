@@ -59,7 +59,7 @@ public class VentaService extends BaseEntityServiceImpl<Venta, Long> {
                 if (modeloNombre.equals("LoteFijo") && provPredId > 0 && !existeOCEnCurso){
                     ArticuloModeloLoteFijo modeloFijo = (ArticuloModeloLoteFijo) modeloInventario;
                     if ((stockActual - cantCompra) < modeloFijo.getPuntoPedido()){
-                        DTOOrdenCompraArticulo dtoOCA = new DTOOrdenCompraArticulo(modeloFijo.getLoteOptimo(), articuloId); // TODO - No tiene en cuenta el lote óptimo (habré querido decir stock?)
+                        DTOOrdenCompraArticulo dtoOCA = new DTOOrdenCompraArticulo(modeloFijo.getLoteOptimo(), articuloId);
                         DTOOrdenCompra dtoOC = new DTOOrdenCompra(new ArrayList<>(), provPredId);
                         dtoOC.getDetallesarticulo().add(dtoOCA);
                         ocService.altaOrdenCompra(dtoOC);
