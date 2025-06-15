@@ -19,7 +19,7 @@ public class Articulo extends BaseEntity {
     @Column(length = 1500) // 1500 caracteres de descripción (una guasada)
     private String descripcion;
     private float costoAlmacenamiento;
-    private float demanda;
+    private float demanda; //demanda anual
     private float demandaDesviacionEstandar;
     private float nivelServicio;
     private float stock;

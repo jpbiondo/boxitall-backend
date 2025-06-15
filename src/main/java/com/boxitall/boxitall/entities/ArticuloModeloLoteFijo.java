@@ -10,13 +10,11 @@ import lombok.Setter;
 @Entity
 @NoArgsConstructor
 public class ArticuloModeloLoteFijo extends ArticuloModeloInventario{
-    private float loteOptimo;
     private float puntoPedido;
 
     //Hecho a mano por problemas con los constructors de lombok
-    public ArticuloModeloLoteFijo(float loteOptimo, float puntoPedido) {
-        super(0.0f); // TODO sacar el stock de seguridad de acá, debería ser calculado
-        this.loteOptimo = loteOptimo;
+    /*public ArticuloModeloLoteFijo(float loteOptimo, float puntoPedido) {
+        super(0.0f,0); // TODO sacar el stock de seguridad de acá, debería ser calculado
         this.puntoPedido = puntoPedido;
-    }
+    }*/
 }

@@ -1,6 +1,9 @@
 package com.boxitall.boxitall.controllers;
 
 
+import com.boxitall.boxitall.dtos.articulo.DTOArticuloProveedor;
+import com.boxitall.boxitall.dtos.proveedor.DTOAltaProveedor;
+import com.boxitall.boxitall.dtos.proveedor.DTOProveedor;
 import com.boxitall.boxitall.entities.Proveedor;
 import com.boxitall.boxitall.services.ProveedorService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,10 +19,11 @@ public class ProveedorController extends BaseEntityControllerImpl<Proveedor, Pro
     private ProveedorService proveedorService;
 
     @PostMapping("/alta")
-    public ResponseEntity<?> altaProveedor(@RequestBody Proveedor proveedor, @RequestParam Long idArt) {
+    public ResponseEntity<?> altaProveedor(@RequestBody DTOAltaProveedor dtoAltaProveedor, @RequestParam Long idArt) {
         try {
 
-            Proveedor savedProveedor = proveedorService.altaProveedor(proveedor, idArt);
+            Proveedor savedProveedor = proveedorService.altaProveedor(dtoAltaProveedor, idArt);
+
             return ResponseEntity.status(HttpStatus.CREATED).body(savedProveedor);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
@@ -39,4 +43,22 @@ public class ProveedorController extends BaseEntityControllerImpl<Proveedor, Pro
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
+
+   /* @GetMapping("/proveedor/{idProveedor}/articulos")
+    public ResponseEntity<?> obtenerArticulosPorProveedor(@PathVariable Long idProveedor) {
+        try {
+            List<Articulo> articulos = proveedorService.obtenerArticulosPorProveedor(idProveedor);
+
+            if (articulos.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NO_CONTENT).body("{\"mensaje\":\"No se encontraron artículos para este proveedor\"}");
+            }
+
+            // Devolver la lista de artículos que provee ese proveedor
+            return ResponseEntity.ok(articulos);
+
+        } catch (Exception e) {
+            // En caso de error
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\":\"" + e.getMessage() + "\"}");
+        }
+    }*/
 }
