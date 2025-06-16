@@ -3,9 +3,7 @@ package com.boxitall.boxitall.controllers;
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloAddProveedor;
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloAlta;
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloDetalle;
-import com.boxitall.boxitall.dtos.articulo.DTOArticuloProveedor;
 import com.boxitall.boxitall.entities.Articulo;
-import com.boxitall.boxitall.entities.Proveedor;
 import com.boxitall.boxitall.services.ArticuloService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -27,7 +25,7 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
         try {
             return ResponseEntity.status(HttpStatus.OK).body(servicio.listAll());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\":\"Error, por favor intente más tarde\"}");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\" error\":\"Error," + e.getMessage() + "}\"");
         }
     }
 

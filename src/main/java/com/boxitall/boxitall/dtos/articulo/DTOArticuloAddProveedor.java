@@ -18,5 +18,4 @@ public class DTOArticuloAddProveedor {
     private float costoPedido;
     private int demoraEntrega; //en días
     private float precioUnitario;
-    private float puntoPedido;
 }

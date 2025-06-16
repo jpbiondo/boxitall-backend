@@ -2,7 +2,6 @@ package com.boxitall.boxitall.services;
 
 
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloAddProveedor;
-import com.boxitall.boxitall.dtos.articulo.DTOArticuloProveedor;
 import com.boxitall.boxitall.dtos.proveedor.DTOAltaProveedor;
 import com.boxitall.boxitall.dtos.proveedor.DTOProveedor;
 import com.boxitall.boxitall.entities.Articulo;
@@ -58,6 +57,7 @@ public class ProveedorService extends BaseEntityServiceImpl<Proveedor, Long> {
 
             Proveedor savedProveedor = proveedorRepository.save(proveedor);
             // Asegurarse de que el proveedor esté asociado a al menos un artículo
+            dtoArticuloProveedor.setProveedorId(savedProveedor.getId());
             articuloService.addProveedor(dtoArticuloProveedor);
             return savedProveedor;
         }

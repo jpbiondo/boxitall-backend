@@ -1,9 +1,7 @@
 package com.boxitall.boxitall.controllers;
 
 
-import com.boxitall.boxitall.dtos.articulo.DTOArticuloProveedor;
 import com.boxitall.boxitall.dtos.proveedor.DTOAltaProveedor;
-import com.boxitall.boxitall.dtos.proveedor.DTOProveedor;
 import com.boxitall.boxitall.entities.Proveedor;
 import com.boxitall.boxitall.services.ProveedorService;
 import org.springframework.beans.factory.annotation.Autowired;

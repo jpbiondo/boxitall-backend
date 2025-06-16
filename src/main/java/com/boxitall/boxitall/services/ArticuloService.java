@@ -4,7 +4,6 @@ import com.boxitall.boxitall.dtos.articulo.DTOArticuloAddProveedor;
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloAlta;
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloDetalle;
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloListado;
-import com.boxitall.boxitall.dtos.articulo.DTOArticuloProveedor;
 import com.boxitall.boxitall.entities.*;
 import com.boxitall.boxitall.repositories.ArticuloRepository;
 import com.boxitall.boxitall.repositories.OrdenCompraRepository;
@@ -557,7 +556,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
     // Chequea que el artíuclo no esté de baja. En caso de estarlo, error
     private void checkBaja(Articulo articulo) throws RuntimeException{
-        if (articulo.getFechaBaja().isBefore(LocalDateTime.now()))
+        if (articulo.getFechaBaja() == null || articulo.getFechaBaja().isBefore(LocalDateTime.now()))
             throw new RuntimeException("El artículo está dado de baja");
     }
 
