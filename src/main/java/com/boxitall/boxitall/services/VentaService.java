@@ -37,6 +37,10 @@ public class VentaService extends BaseEntityServiceImpl<Venta, Long> {
                 float cantCompra = dto.getId_cantidad().get(articuloId); // Cantidad a comprar
                 Articulo articulo = articuloService.findById(articuloId);
 
+                //Verificamos que el artículo sea comprable (no de baja y con proveedor predeterminado)
+                if (articulo.getProvPred() == null) throw new RuntimeException("El artículo no está listo para ser vendido al no tener proveedor predeterminado");
+                if (articulo.getFechaBaja() == null) throw new RuntimeException("El artíuclo está dado de baja y no puede ser vendido");
+
                 // Verificamos los imposibles
                 if (cantCompra <= 0) throw new RuntimeException("No se pueden comprar cantidades negativas o iguales a cero");
                 if (cantCompra > articulo.getStock()) throw new RuntimeException("No hay suficiente stock para la venta");
