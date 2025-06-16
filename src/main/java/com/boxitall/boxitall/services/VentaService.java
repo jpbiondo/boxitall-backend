@@ -37,6 +37,10 @@ public class VentaService extends BaseEntityServiceImpl<Venta, Long> {
                 float cantCompra = dto.getId_cantidad().get(articuloId); // Cantidad a comprar
                 Articulo articulo = articuloService.findById(articuloId);
 
+                //Verificamos que el artículo sea comprable (no de baja y con proveedor predeterminado)
+                if (articulo.getProvPred() == null) throw new RuntimeException("El artículo no está listo para ser vendido al no tener proveedor predeterminado");
+                if (articulo.getFechaBaja() == null) throw new RuntimeException("El artíuclo está dado de baja y no puede ser vendido");
+
                 // Verificamos los imposibles
                 if (cantCompra <= 0) throw new RuntimeException("No se pueden comprar cantidades negativas o iguales a cero");
                 if (cantCompra > articulo.getStock()) throw new RuntimeException("No hay suficiente stock para la venta");
@@ -59,7 +63,7 @@ public class VentaService extends BaseEntityServiceImpl<Venta, Long> {
                 if (modeloNombre.equals("LoteFijo") && provPredId > 0 && !existeOCEnCurso){
                     ArticuloModeloLoteFijo modeloFijo = (ArticuloModeloLoteFijo) modeloInventario;
                     if ((stockActual - cantCompra) < modeloFijo.getPuntoPedido()){
-                        DTOOrdenCompraArticulo dtoOCA = new DTOOrdenCompraArticulo(modeloFijo.getLoteOptimo(), articuloId); // TODO - No tiene en cuenta el lote óptimo (habré querido decir stock?)
+                        DTOOrdenCompraArticulo dtoOCA = new DTOOrdenCompraArticulo(modeloFijo.getLoteOptimo(), articuloId);
                         DTOOrdenCompra dtoOC = new DTOOrdenCompra(new ArrayList<>(), provPredId);
                         dtoOC.getDetallesarticulo().add(dtoOCA);
                         ocService.altaOrdenCompra(dtoOC);

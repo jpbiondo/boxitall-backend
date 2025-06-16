@@ -44,6 +44,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             switch (dto.getModeloNombre()){
                 case "LoteFijo" -> {
                     modeloInventario = new ArticuloModeloLoteFijo();
+                    modeloInventario.setLoteOptimo(0);  // Para evitar null pointers
                 }
                 case "IntervaloFijo" ->{
                     LocalDateTime proxPedido = LocalDateTime.now().plusDays(dto.getIntervaloPedido());
@@ -92,8 +93,11 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             // Chequeamos que no esté dado de baja
             checkBaja(articulo);
 
-            // Chequear que no tenga OC activas
+            // Chequear que no tenga OC activas (Restricción del negocio)
             checkOrdenesActivas(articulo);
+
+            // Chequeamos que el artículo no tenga stock (Restricción del negocio)
+            if (articulo.getStock() > 0) throw new RuntimeException("No puede darse de baja un artículo que aún tiene stock");
 
             articulo.setFechaBaja(LocalDateTime.now());
         } catch (Exception e) {
@@ -250,6 +254,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             if (articuloProveedor == null) throw new RuntimeException("El proveedor ingresado no provee este artículo");
 
             articulo.getArtProveedores().remove(articuloProveedor);
+            articulo.setProvPred(null);
             update(idArt, articulo);
 
         }
@@ -352,7 +357,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             case "LoteFijo" -> {
                 ArticuloModeloLoteFijo modeloEspecifico = (ArticuloModeloLoteFijo) modeloInventario;
                 proxPedido = LocalDateTime.now(); // TODO - Este valor no se usa
-                stockPedido = modeloEspecifico.getLoteOptimo();         // TODO - No sé si es esto, temporal
+                stockPedido = modeloEspecifico.getLoteOptimo();
             }
             case "IntervaloFijo" -> {
                 ArticuloModeloIntervaloFijo modeloEspecifico = (ArticuloModeloIntervaloFijo) modeloInventario;
@@ -569,7 +574,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
     // Chequea que el artíuclo no esté de baja. En caso de estarlo, error
     private void checkBaja(Articulo articulo) throws RuntimeException{
-        if (articulo.getFechaBaja() == null || articulo.getFechaBaja().isBefore(LocalDateTime.now()))
+        if (articulo.getFechaBaja() != null)
             throw new RuntimeException("El artículo está dado de baja");
     }
 
