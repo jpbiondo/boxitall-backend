@@ -22,7 +22,5 @@ public class DTOArticuloAlta {
     //Intervalo fijo
     private int intervaloPedido;
     private float inventarioMaximo;
-    //Lote fijo
-    private float loteOptimo;
-    private float puntoPedido;
+
 }
