@@ -1,6 +1,7 @@
 package com.boxitall.boxitall.services;
 
 
+import com.boxitall.boxitall.dtos.articulo.DTOArticuloAddProveedor;
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloProveedor;
 import com.boxitall.boxitall.dtos.proveedor.DTOAltaProveedor;
 import com.boxitall.boxitall.dtos.proveedor.DTOProveedor;
@@ -15,7 +16,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -83,11 +84,11 @@ public class ProveedorService extends BaseEntityServiceImpl<Proveedor, Long> {
                     throw new Exception("No se puede dar de baja el proveedor porque es el proveedor predeterminado de algunos artículos.");
                 }
                 // Verifica si el proveedor tiene una orden de compra pendiente o en curso
-                List<OrdenCompra> ordenesActivas = ordenCompraRepository.findOrdenesActivasByProveedor(proveedor);
+                List<OrdenCompra> ordenesActivas = ordenCompraRepository.findOrdenesActivasbyProveedor(proveedor);
                 if (!ordenesActivas.isEmpty()) {
                     throw new Exception("El proveedor tiene órdenes de compra activas (pendientes o enviadas) y no puede ser dado de baja.");
                 }
-                proveedor.setProveedorFechaBaja(new Date());
+                proveedor.setProveedorFechaBaja(LocalDateTime.now());
                 proveedorRepository.save(proveedor);
                 return true;
             }else {

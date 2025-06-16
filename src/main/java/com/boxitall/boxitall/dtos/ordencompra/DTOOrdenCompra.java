@@ -1,6 +1,5 @@
-package com.boxitall.boxitall.dtos;
+package com.boxitall.boxitall.dtos.ordencompra;
 
-import com.boxitall.boxitall.entities.Proveedor;
 import lombok.*;
 
 import java.util.List;

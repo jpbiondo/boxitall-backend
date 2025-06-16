@@ -1,22 +1,20 @@
 package com.boxitall.boxitall.services;
 
+import com.boxitall.boxitall.dtos.articulo.DTOArticuloAddProveedor;
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloAlta;
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloDetalle;
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloListado;
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloProveedor;
 import com.boxitall.boxitall.entities.*;
 import com.boxitall.boxitall.repositories.ArticuloRepository;
-import com.boxitall.boxitall.repositories.OrdenCompraArticuloRepository;
 import com.boxitall.boxitall.repositories.ProveedorRepository;
 import jakarta.transaction.Transactional;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.apache.commons.math3.distribution.NormalDistribution;
-import java.time.LocalDate;
+
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.*;
 
 
@@ -28,15 +26,12 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     @Autowired
     private ProveedorRepository proveedorRepository;
 
-    @Autowired
-    private OrdenCompraArticuloRepository ordenCompraArticuloRepository;
-
     @Transactional
     public void altaArticulo(DTOArticuloAlta dto){
         try{
             List<Articulo> articulos = articuloRepository.findAll(); //Encuentra todos los artículos
             for (Articulo articulo : articulos){
-                if (Objects.equals(articulo.getNombre(), dto.getNombre()))
+                if (Objects.equals(articulo.getNombre(), dto.getNombre()) && articulo.getFechaBaja() != null)
                     throw new RuntimeException("Ya existe un artículo con este nombre");
             }
 
@@ -44,7 +39,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             ArticuloModeloInventario modeloInventario;
             switch (dto.getModeloNombre()){
                 case "LoteFijo" -> {
-                    modeloInventario = new ArticuloModeloLoteFijo();
+                    modeloInventario = new ArticuloModeloLoteFijo(dto.getLoteOptimo(), dto.getPuntoPedido());
                 }
                 case "IntervaloFijo" ->{
                     LocalDateTime proxPedido = LocalDateTime.now().plusDays(dto.getIntervaloPedido());
@@ -57,7 +52,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             Articulo articulo = new Articulo(
                     dto.getNombre(), dto.getDescripcion(),dto.getCostoAlmacenamiento(),
                     dto.getDemanda(),dto.getDemandaDesviacionEstandar(),dto.getNivelServicio(),
-                    dto.getStock(), modeloInventario          // TODO - Proveedor o estado?
+                    dto.getStock(), modeloInventario
             );
 
             // Guardar el artículo
@@ -85,9 +80,21 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         }
     }
 
+    // Da de baja el artículo mediante articulo.fechaBaja
     @Transactional
-    public void bajaArticulo(Long id){         // TODO - Baja con estado?
+    public void bajaArticulo(Long id){
+        try{
+            Articulo articulo = encontrarArticulo(id);
+            // Chequeamos que no esté dado de baja
+            checkBaja(articulo);
 
+            // Chequear que no tenga OC activas
+            checkOrdenesActivas(articulo);
+
+            articulo.setFechaBaja(LocalDateTime.now());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     // Obtiene toda la información del artículo para mostrarla en detalle
@@ -116,11 +123,15 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
     @Transactional
     public void addProveedor(Long idProveedor, Long idArt, DTOArticuloProveedor dto){
+    public void addProveedor(DTOArticuloAddProveedor dto){
         try{
             //Encontrar el Artículo
-            Articulo articulo = encontrarArticulo(idArt);
+            Articulo articulo = encontrarArticulo(dto.getArticuloId());
             //Encontrar el Proveedor
-            Proveedor proveedor = encontrarProveedor(idProveedor);
+            Proveedor proveedor = encontrarProveedor(dto.getProveedorId());
+
+            // Checkear que el artículo no esté dado de baja
+            checkBaja(articulo);
 
             //checkear que no esté ya agregado el proveedor
             List<ArticuloProveedor> artProvs = articulo.getArtProveedores();
@@ -131,7 +142,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
                     }
                 }
             }
-            else artProvs = new ArrayList<>();      // Está por un warning que tiraba, pero andaba igual con o sin
+            else artProvs = new ArrayList<>();      // Está por un warning que tiraba, pero andaba igual con o sin esta línea
 
             // Agregar ArtículoProveedor y setear todos sus datos
             ArticuloProveedor artProv = new ArticuloProveedor();
@@ -144,12 +155,19 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             artProv.setPuntoPedido(dto.getPuntoPedido());
 
 
+            // Agregar ArtículoProveedor
+            ArticuloProveedor artProv = new ArticuloProveedor();
             artProv.setProveedor(proveedor);
             artProvs.add(artProv);
+            artProv.setCargoPedido(dto.getCargoPedido());
+            artProv.setCostoCompra(dto.getCostoCompra());
+            artProv.setDemoraEntrega(dto.getDemoraEntrega());
+            artProv.setPrecioUnitario(dto.getPrecioUnitario());
+            artProv.setPuntoPedido(dto.getPuntoPedido());
             articulo.setArtProveedores(artProvs);
 
             // Guardar cambios
-            update(idArt, articulo);
+            update(dto.getArticuloId(), articulo);
         }
         catch (Exception e) {
             throw new RuntimeException(e);
@@ -164,6 +182,8 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             //Encontrar el Proveedor
             Proveedor proveedor = encontrarProveedor(idProveedor);
 
+            checkBaja(articulo);
+
             //checkear que ya esté agregado el proveedor
             boolean provee = false;
             List<ArticuloProveedor> artProvs = articulo.getArtProveedores();
@@ -173,9 +193,11 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
                     break;
                 }
             }
-            if (!provee) throw new Exception("El proveedor ingresado no provee este artículo");
+            if (!provee)
+                throw new Exception("El proveedor ingresado no provee este artículo");
 
-            if (articulo.getProvPred() == proveedor) throw new RuntimeException("El proveedor ingresado ya es proveedor predeterminado de este artículo"); // TODO - Better handling
+            if (articulo.getProvPred() == proveedor)
+                throw new RuntimeException("El proveedor ingresado ya es proveedor predeterminado de este artículo");
 
             //Settear proveedor
             articulo.setProvPred(proveedor);
@@ -193,6 +215,32 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         }
     }
 
+    @Transactional
+    public void quitarProveedor(Long idProveedor, Long idArt){
+        try{
+            Articulo articulo = encontrarArticulo(idArt);
+            Proveedor proveedor = encontrarProveedor(idProveedor);
+
+            checkBaja(articulo);
+
+            // Encontrar el artículoProveedor de ese proveedor
+            ArticuloProveedor articuloProveedor = null;
+            for (ArticuloProveedor artProv : articulo.getArtProveedores()){
+                if (artProv.getProveedor() == proveedor){
+                    articuloProveedor = artProv;
+                    break;
+                }
+            }
+            if (articuloProveedor == null) throw new RuntimeException("El proveedor ingresado no provee este artículo");
+
+            articulo.getArtProveedores().remove(articuloProveedor);
+            update(idArt, articulo);
+
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
     // -------- Funciones auxiliares
 
     // Encuentra un artículo que puede o no estar
@@ -287,13 +335,13 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         switch (modeloNombre){
             case "LoteFijo" -> {
                 ArticuloModeloLoteFijo modeloEspecifico = (ArticuloModeloLoteFijo) modeloInventario;
-                proxPedido = LocalDateTime.now();           // TODO - Fecha según la demanda estimada
+                proxPedido = LocalDateTime.now(); // TODO - Este valor no se usa
                 stockPedido = modeloEspecifico.getLoteOptimo();         // TODO - No sé si es esto, temporal
             }
             case "IntervaloFijo" -> {
                 ArticuloModeloIntervaloFijo modeloEspecifico = (ArticuloModeloIntervaloFijo) modeloInventario;
                 proxPedido = modeloEspecifico.getFechaProximoPedido();
-                stockPedido = 20f;          // TODO - Calcular el estimado
+                stockPedido = 0; // TODO - Este valor no se usa
             }
             default -> throw new RuntimeException("El artículo no posee modelo de inventario");
         }
@@ -512,4 +560,16 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     }
     //Falta calculo de intervalo Fijo
 
+    // Chequea que el artíuclo no esté de baja. En caso de estarlo, error
+    private void checkBaja(Articulo articulo) throws RuntimeException{
+        if (articulo.getFechaBaja().isBefore(LocalDateTime.now()))
+            throw new RuntimeException("El artículo está dado de baja");
+    }
+
+    // Chequea que el artíuclo no tenga OC activas. En caso de tenerlas, error
+    private void checkOrdenesActivas(Articulo articulo) throws RuntimeException{
+        List<OrdenCompra> ordenesCompra = ordenCompraRepository.findOrdenesActivasByArticulo(articulo);
+        if (!ordenesCompra.isEmpty())
+            throw new RuntimeException("Hay órdenes de compra activas, no puede darse de baja al artículo");
+    }
 }

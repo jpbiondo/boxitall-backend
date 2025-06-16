@@ -1,19 +1,15 @@
 package com.boxitall.boxitall.services;
 
-import com.boxitall.boxitall.dtos.DTOOrdenCompra;
-import com.boxitall.boxitall.dtos.DTOOrdenCompraArticulo;
-import com.boxitall.boxitall.entities.EstadoOrdenCompra;
-import com.boxitall.boxitall.entities.OrdenCompra;
-import com.boxitall.boxitall.entities.OrdenCompraEstadoOC;
-import com.boxitall.boxitall.entities.Proveedor;
-import com.boxitall.boxitall.repositories.EstadoOrdenCompraRepository;
-import com.boxitall.boxitall.repositories.OrdenCompraEstadoOCRepository;
-import com.boxitall.boxitall.repositories.OrdenCompraRepository;
-import com.boxitall.boxitall.repositories.ProveedorRepository;
+import com.boxitall.boxitall.dtos.ordencompra.DTOOrdenCompra;
+import com.boxitall.boxitall.dtos.ordencompra.DTOOrdenCompraArticulo;
+import com.boxitall.boxitall.dtos.ordencompra.DTORtdoAltaOrdenCompra;
+import com.boxitall.boxitall.entities.*;
+import com.boxitall.boxitall.repositories.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -30,74 +26,125 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
     OrdenCompraArticuloService ordenCompraArticuloService ;
     @Autowired
     ProveedorRepository proveedorRepository;
-    public OrdenCompra altaOrdenCompra(DTOOrdenCompra ordencompradto) {
-        //  Buscar el estado pendiente
-        EstadoOrdenCompra estadopendiente = estadoOrdenCompraRepository
-                .findByNombre("PENDIENTE")
-                .orElseThrow(() -> new RuntimeException("Estado 'PENDIENTE' no encontrado."));
-        // Buscar proveedor
-        Proveedor proveedor = proveedorRepository.findById(ordencompradto.getIDProveedor())
-                .orElseThrow(() -> new RuntimeException("Proveedor con ID " + ordencompradto.getIDProveedor() + " no encontrado."));
-
-        // Crear la orden de compra
-        OrdenCompra orden = new OrdenCompra();
-        orden.setFechaInicio(new Date());
-        orden.setProveedor(proveedor);
-        orden = ordenCompraRepository.save(orden);
-        // EstadoActual
-        OrdenCompraEstadoOC estadoactual = new OrdenCompraEstadoOC();
-        estadoactual.setEstado(estadopendiente);
-        estadoactual.setOrdenCompra(orden);
-        estadoactual.setFechaInicio(new Date());
-        estadoactual.setFechaFin(null);
-        ordenCompraEstadoOCRepository.save(estadoactual);
-        // Delegar la creacion de los detalles?
+    @Autowired
+    OrdenCompraArticuloRepository ordenCompraArticuloRepository;
+    public DTORtdoAltaOrdenCompra altaOrdenCompra(DTOOrdenCompra ordencompradto) {
         List<String> errores = new ArrayList<>();
+        OrdenCompra orden = new OrdenCompra();
 
-        for (DTOOrdenCompraArticulo detalleDto : ordencompradto.getDetallesarticulo()) {
-            try {
-                ordenCompraArticuloService.altaDetalle(detalleDto, orden);
-            } catch (Exception e) {
-                errores.add("Artículo ID " + detalleDto.getIDarticulo() + ": " + e.getMessage());
+        try {
+            EstadoOrdenCompra estadopendiente = estadoOrdenCompraRepository
+                    .findByNombre("PENDIENTE")
+                    .orElseThrow(() -> new RuntimeException("Estado 'PENDIENTE' no encontrado."));
+
+            Proveedor proveedor = proveedorRepository.findById(ordencompradto.getIDProveedor())
+                    .orElseThrow(() -> new RuntimeException("Proveedor con ID " + ordencompradto.getIDProveedor() + " no encontrado."));
+
+            OrdenCompraEstadoOC estadoactual = new OrdenCompraEstadoOC();
+            estadoactual.setEstado(estadopendiente);
+            estadoactual.setFechaInicio(new Date());
+            ordenCompraEstadoOCRepository.save(estadoactual);
+
+            orden.setFechaInicio(LocalDateTime.now());
+            orden.setProveedor(proveedor);
+            orden.getHistorialEstados().add(estadoactual);
+
+            for (DTOOrdenCompraArticulo detalleDto : ordencompradto.getDetallesarticulo()) {
+                try {
+                    OrdenCompraArticulo detalecreado = ordenCompraArticuloService.altaDetalle(detalleDto);
+                    orden.getDetalles().add(detalecreado);
+                } catch (Exception e) {
+                    errores.add("Artículo ID " + detalleDto.getIDarticulo() + ": " + e.getMessage());
+                }
             }
-        }
 
-        if (!errores.isEmpty()) {
-            throw new RuntimeException("Orden creada parcialmente. Errores: " + String.join("; ", errores));
+            //  si no pued crear ningún detalle
+            if (orden.getDetalles().isEmpty()) {
+                errores.add("No se pudo crear ningún detalle. Orden no creada.");
+                return new DTORtdoAltaOrdenCompra(null,errores);
+            }
+
+            OrdenCompra ordenGuardada = ordenCompraRepository.save(orden);
+            return new DTORtdoAltaOrdenCompra(ordenGuardada, errores);
+
+        } catch (Exception e) {
+            errores.add("Error: " + e.getMessage());
+            return new DTORtdoAltaOrdenCompra(null, errores);
         }
-        return orden;
     }
     @Transactional
     public void cancelarOrdenCompra(Long ordenCompraId) {
-        OrdenCompra orden = ordenCompraRepository.findById(ordenCompraId)
-                .orElseThrow(() -> new RuntimeException("Orden de compra no encontrada."));
+        try {
 
-        // Buscar el estado actual
-        OrdenCompraEstadoOC estadoActual = ordenCompraEstadoOCRepository
-                .findByOrdenCompraAndFechaFinIsNull(orden)
-                .orElseThrow(() -> new RuntimeException("No se encontró el estado actual de la orden."));
+            OrdenCompra orden = ordenCompraRepository.findById(ordenCompraId)
+                    .orElseThrow(() -> new RuntimeException("Orden de compra no encontrada."));
 
-        String estadoActualNombre = estadoActual.getEstado().getNombre();
-        if (!estadoActualNombre.equals("PENDIENTE") && !estadoActualNombre.equals("ENVIADA")) {
-            throw new RuntimeException("Solo se pueden cancelar órdenes en estado PENDIENTE o ENVIADA.");
+            OrdenCompraEstadoOC estadoActual = orden.getNombreEstadoActual(orden);
+            // verficar si se puede cancelar
+            String estadoActualNombre = estadoActual.getEstado().getNombre();
+            if (!"PENDIENTE".equals(estadoActualNombre)) {
+                throw new RuntimeException("Solo se pueden cancelar órdenes en estado PENDIENTE.");
+            }
+            // se cierra el estado actual
+            estadoActual.setFechaFin(new Date());
+            ordenCompraEstadoOCRepository.save(estadoActual);
+
+            EstadoOrdenCompra estadoCancelada = estadoOrdenCompraRepository.findByNombre("CANCELADA")
+                    .orElseThrow(() -> new RuntimeException("No se encontró el estado CANCELADA."));
+            // crear nuevo estado
+            OrdenCompraEstadoOC nuevoEstado = new OrdenCompraEstadoOC();
+            nuevoEstado.setEstado(estadoCancelada);
+            nuevoEstado.setFechaInicio(new Date());
+            nuevoEstado.setFechaFin(null);
+
+            orden.getHistorialEstados().add(nuevoEstado);
+
+            ordenCompraEstadoOCRepository.save(nuevoEstado);
+
+            ordenCompraRepository.save(orden);
+        } catch (Exception e) {
+            throw new RuntimeException("Error al cancelar la orden de compra: " + e.getMessage(), e);
+        }
+    }
+        public void eliminarDetalleDeOrden(Long idOrden, Long idDetalle) {
+            try {
+                OrdenCompra orden = ordenCompraRepository.findById(idOrden)
+                        .orElseThrow(() -> new RuntimeException("Orden de compra no encontrada."));
+                OrdenCompraEstadoOC estadoActual = orden.getNombreEstadoActual(orden);
+                OrdenCompraArticulo detalle = ordenCompraArticuloRepository.findById(idDetalle)
+                        .orElseThrow(() -> new RuntimeException("Detalle no encontrado."));
+                // verfica si se puede eliminar
+                String estadoActualNombre = estadoActual.getEstado().getNombre();
+                if (!"PENDIENTE".equals(estadoActualNombre)) {
+                    throw new RuntimeException("Solo se pueden modificar órdenes en estado PENDIENTE.");
+                }
+                orden.getDetalles().remove(detalle);
+                ordenCompraRepository.save(orden);
+            } catch (Exception e) {
+                throw new RuntimeException("Error eliminar el detalle de la orden de compra: " + e.getMessage(), e);
+            }
+        }
+    @Transactional
+    public void actualizarCantidadDetalle(Long idOrden, Long idDetalle, Integer nuevaCantidad) {
+           try{
+            if (nuevaCantidad == null || nuevaCantidad <= 0) {
+                throw new RuntimeException("La cantidad debe ser mayor a cero.");
+            }
+
+            OrdenCompra orden = ordenCompraRepository.findById(idOrden)
+                    .orElseThrow(() -> new RuntimeException("Orden de compra no encontrada."));
+
+            OrdenCompraArticulo detalle = ordenCompraArticuloRepository.findById(idDetalle)
+                    .orElseThrow(() -> new RuntimeException("Detalle no encontrado."));
+
+            detalle.setCantidad(nuevaCantidad);
+            ordenCompraArticuloRepository.save(detalle);
+           } catch (Exception e) {
+               throw new RuntimeException("Error al modificar el detalle de la orden de compra: " + e.getMessage(), e);
+           }
+
         }
 
-        // Cerrar el estado actual
-        estadoActual.setFechaFin(new Date());
-        ordenCompraEstadoOCRepository.save(estadoActual);
-
-        EstadoOrdenCompra estadoCancelada = estadoOrdenCompraRepository.findByNombre("CANCELADA")
-                .orElseThrow(() -> new RuntimeException("No se encontró el estado CANCELADA."));
-
-        // Crear nuevo estado
-        OrdenCompraEstadoOC nuevoEstado = new OrdenCompraEstadoOC();
-        nuevoEstado.setOrdenCompra(orden);
-        nuevoEstado.setEstado(estadoCancelada);
-        nuevoEstado.setFechaInicio(new Date());
-        nuevoEstado.setFechaFin(null);
-
-        ordenCompraEstadoOCRepository.save(nuevoEstado);
-    }
 
 
-    }
+}

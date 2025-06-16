@@ -1,5 +1,6 @@
 package com.boxitall.boxitall.controllers;
 
+import com.boxitall.boxitall.dtos.articulo.DTOArticuloAddProveedor;
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloAlta;
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloDetalle;
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloProveedor;
@@ -51,9 +52,9 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
     }
 
     @PostMapping("/addProveedor")
-    public ResponseEntity<?> addProveedor(@RequestParam Long prov, @RequestParam Long art, @RequestBody DTOArticuloProveedor dtoArticuloProveedor) {
-        try {
-            servicio.addProveedor(prov, art, dtoArticuloProveedor);
+    public ResponseEntity<?> addProveedor(@RequestParam Long prov, @RequestParam Long art){
+        try{
+            servicio.addProveedor(prov,art);
             return ResponseEntity.status(HttpStatus.OK).body("{\" Proveedor añadido al artículo correctamente }\"");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\" error\":\"Error," + e.getMessage() + "}\"");
@@ -65,6 +66,26 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
         try {
             servicio.setProveedorPred(prov, art);
             return ResponseEntity.status(HttpStatus.OK).body("{\" Proveedor establecido como predeterminado de manera exitosa }\"");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\" error\":\"Error," + e.getMessage() + "}\"");
+        }
+    }
+
+    @DeleteMapping("/quitarProveedor")
+    public ResponseEntity<?> quitarProveedor(@RequestParam Long proveedorId, @RequestParam Long articuloId){
+        try{
+            servicio.quitarProveedor(proveedorId,articuloId);
+            return ResponseEntity.status(HttpStatus.OK).body("{\" Proveedor quitado para el artículo ingresado }\"");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\" error\":\"Error," + e.getMessage() + "}\"");
+        }
+    }
+
+    @DeleteMapping("/bajaArticulo")
+    public ResponseEntity<?> bajaArticulo(@RequestParam Long id){
+        try{
+            servicio.bajaArticulo(id);
+            return ResponseEntity.status(HttpStatus.OK).body("{\" Proveedor quitado para el artículo ingresado }\"");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\" error\":\"Error," + e.getMessage() + "}\"");
         }
