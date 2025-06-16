@@ -28,7 +28,7 @@ public class Articulo extends BaseEntity {
     private LocalDateTime fechaBaja;
 
     //Relaciones
-    @OneToOne
+    @ManyToOne
     private Proveedor provPred;
 
     @OneToMany(cascade = CascadeType.ALL)
@@ -46,7 +46,7 @@ public class Articulo extends BaseEntity {
         this.demanda = demanda;
         if (demandaDesviacionEstandar < 0) throw new BadArticle("La desviación estándar de la demanda no puede ser negativa");
         this.demandaDesviacionEstandar = demandaDesviacionEstandar;
-        if (nivelServicio < 0 || nivelServicio > 1) throw new BadArticle("El nivel de servicio debe ser un valor entre 0 y 1");
+        if (nivelServicio <= 0.5 || nivelServicio >= 1) throw new BadArticle("El nivel de servicio debe ser un valor entre 0.5 y 1");
         this.nivelServicio = nivelServicio;
         if (stock < 0) throw new BadArticle("El stock no puede ser negativo");
         this.stock = stock;
