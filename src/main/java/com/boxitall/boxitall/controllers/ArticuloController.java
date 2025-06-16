@@ -69,7 +69,7 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\" error\":\"Error," + e.getMessage() + "}\"");
         }
     }
-    //agregue estos endpoints para revisarlos en postman, luego hay que eliminarlos
+    /*//agregue estos endpoints para revisarlos en postman, luego hay que eliminarlos
     //calculo de Modelo Lote Fijo
     @PostMapping("/{id}/calcular-lote-optimo")
     public ResponseEntity<?> calcularLoteOptimo(@PathVariable Long id) {
@@ -127,6 +127,6 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al calcular CGI.");
         }
-    }
+    }*/
 
 }

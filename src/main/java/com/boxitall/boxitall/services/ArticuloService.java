@@ -180,13 +180,39 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             //Settear proveedor
             articulo.setProvPred(proveedor);
 
-            calcularLoteOptimo(idArt);
-            calcularPuntoPedido(idArt);
-            calcularStockSeguridad(idArt);
+            /*calcularLoteOptimo(articulo);
+            calcularStockSeguridad(articulo);
+            calcularPuntoPedido(articulo);
+            calcularCGI(articulo);*/
+            // Intentar calcular el lote óptimo
+            Optional<Integer> loteOptimo = calcularLoteOptimo(articulo);
+            if (loteOptimo.isEmpty()) {
+                throw new RuntimeException("No se pudo calcular el lote óptimo.");
+            }
+
+            // Intentar calcular el stock de seguridad
+            Optional<Integer> stockSeguridad = calcularStockSeguridad(articulo);
+            if (stockSeguridad.isEmpty()) {
+                throw new RuntimeException("No se pudo calcular el stock de seguridad.");
+            }
+
+            // Intentar calcular el punto de pedido
+            if (articulo.getModeloInventario() instanceof ArticuloModeloLoteFijo) {
+                Optional<Integer> puntoPedido = calcularPuntoPedido(articulo);
+                if (puntoPedido.isEmpty()) {
+                    throw new RuntimeException("No se pudo calcular el punto de pedido.");
+                }
+            }
+
+            // Intentar calcular el Costo de Gestión de Inventarios (CGI)
+            Optional<Double> cgi = calcularCGI(articulo);
+            if (cgi.isEmpty()) {
+                throw new RuntimeException("No se pudo calcular el Costo de Gestión de Inventarios (CGI).");
+            }
 
             //Guardar cambios
             update(idArt, articulo);
-           // calcularCGI(idArt);
+
 
         } catch (Exception e) {
             throw new RuntimeException("No se pudo establecer el proveedor predeterminado");
@@ -321,8 +347,8 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
     public float calcularZ(float nivelServicio) {
         // Validar que el nivel de servicio esté en el rango válido [0, 1]
-        if (nivelServicio <= 0 || nivelServicio >= 1) {
-            throw new IllegalArgumentException("El nivel de servicio debe estar entre 0 y 1 (excluyendo ambos extremos).");
+        if (nivelServicio <= 0.5 || nivelServicio >= 1) {
+            throw new IllegalArgumentException("El nivel de servicio debe estar entre 0.5 y 1 (excluyendo ambos extremos).");
         }
 
         // Usamos la distribución normal estándar para calcular el valor de z
@@ -333,10 +359,8 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     }
 
     @Transactional
-    public Optional<Integer> calcularLoteOptimo(Long idArticulo) {
+    public Optional<Integer> calcularLoteOptimo(Articulo articulo) {
         try {
-            Articulo articulo = articuloRepository.getReferenceById(idArticulo);
-
             double loteOptimo;
             float demanda = articulo.getDemanda();
             float costoAlmacenamiento = articulo.getCostoAlmacenamiento();
@@ -377,14 +401,10 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     }
 
     @Transactional
-    public Optional<Integer> calcularPuntoPedido(Long idArticulo) {
+    public Optional<Integer> calcularPuntoPedido(Articulo articulo) {
         try {
-            Articulo articulo = articuloRepository.getReferenceById(idArticulo);
 
             // Obtener el modelo de inventario, que debe ser de tipo ArticuloModeloLoteFijo
-            if (!(articulo.getModeloInventario() instanceof ArticuloModeloLoteFijo)) {
-                throw new IllegalArgumentException("Este artículo no pertenece al modelo de lote fijo.");
-            }
 
             ArticuloModeloLoteFijo modeloLoteFijo = (ArticuloModeloLoteFijo) articulo.getModeloInventario();
 
@@ -405,7 +425,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
             puntoPedido =Math.round(demanda * leadTime + stockSeguridad) ;
 
-            modeloLoteFijo.setLoteOptimo((int)puntoPedido);
+            modeloLoteFijo.setPuntoPedido((int)puntoPedido);
             save(articulo);
 
             return Optional.of((int) puntoPedido);
@@ -421,9 +441,9 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         }
     }
     @Transactional
-    public Optional<Integer> calcularStockSeguridad(Long idArticulo) {
+    public Optional<Integer> calcularStockSeguridad(Articulo articulo) {
         try {
-            Articulo articulo = articuloRepository.getReferenceById(idArticulo);
+
             Optional<ArticuloProveedor> articuloProveedorPred = obtenerArticuloProveedorPredeterminado(articulo);
 
             // Si no se puede obtener el ArticuloProveedor, devolvemos Optional.empty()
@@ -438,7 +458,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             float z =calcularZ(nivelServicio);
 
             if (leadTime == 0 || z == 0 || desviacion == 0) {
-                return Optional.empty(); // Si alguna variable es cero, no calculamos el stock de seguridad
+                return Optional.empty();
             }
 
             int stockSeguridad;
@@ -458,7 +478,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
                     return Optional.empty(); // Si intervaloPedido es cero, no calculamos el stock de seguridad
                 }
                 // Calcular Stock de Seguridad para Intervalo Fijo
-                stockSeguridad = (int) Math.round(z * desviacion * Math.sqrt(leadTime * intervaloPedido));
+                stockSeguridad = (int) Math.round(z * desviacion * Math.sqrt(leadTime + intervaloPedido));
                 articulo.getModeloInventario().setStockSeguridad(stockSeguridad);
             }
               else {
@@ -466,7 +486,6 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
                     throw new IllegalArgumentException("Este artículo no tiene un modelo de inventario válido.");
               }
 
-              save(articulo);
               return Optional.of(stockSeguridad);
 
             } catch(Exception e){
@@ -475,12 +494,10 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             }
         }
 
-    public Optional<Double> calcularCGI(Long idArticulo) {
+    public Optional<Double> calcularCGI(Articulo articulo) {
         try {
-            Articulo articulo = articuloRepository.getReferenceById(idArticulo);
-            ArticuloModeloLoteFijo modeloLoteFijo = (ArticuloModeloLoteFijo) articulo.getModeloInventario();
 
-            float loteOptimo = modeloLoteFijo.getLoteOptimo();
+            float loteOptimo = articulo.getModeloInventario().getLoteOptimo();
 
             Optional<ArticuloProveedor> articuloProveedorPred = obtenerArticuloProveedorPredeterminado(articulo);
 
