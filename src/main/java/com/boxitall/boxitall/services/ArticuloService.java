@@ -7,10 +7,12 @@ import com.boxitall.boxitall.dtos.articulo.DTOArticuloListado;
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloProveedor;
 import com.boxitall.boxitall.entities.*;
 import com.boxitall.boxitall.repositories.ArticuloRepository;
+import com.boxitall.boxitall.repositories.OrdenCompraRepository;
 import com.boxitall.boxitall.repositories.ProveedorRepository;
 import jakarta.transaction.Transactional;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.math3.distribution.NormalDistribution;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +28,9 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     @Autowired
     private ProveedorRepository proveedorRepository;
 
+    @Autowired
+    private OrdenCompraRepository ordenCompraRepository;
+
     @Transactional
     public void altaArticulo(DTOArticuloAlta dto){
         try{
@@ -39,7 +44,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             ArticuloModeloInventario modeloInventario;
             switch (dto.getModeloNombre()){
                 case "LoteFijo" -> {
-                    modeloInventario = new ArticuloModeloLoteFijo(dto.getLoteOptimo(), dto.getPuntoPedido());
+                    modeloInventario = new ArticuloModeloLoteFijo();
                 }
                 case "IntervaloFijo" ->{
                     LocalDateTime proxPedido = LocalDateTime.now().plusDays(dto.getIntervaloPedido());
@@ -122,7 +127,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     }
 
     @Transactional
-    public void addProveedor(Long idProveedor, Long idArt, DTOArticuloProveedor dto){
+    //public void addProveedor(Long idProveedor, Long idArt, DTOArticuloProveedor dto){
     public void addProveedor(DTOArticuloAddProveedor dto){
         try{
             //Encontrar el Artículo
@@ -152,18 +157,8 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             artProv.setCostoPedido(dto.getCostoPedido());
             artProv.setDemoraEntrega(dto.getDemoraEntrega());
             artProv.setPrecioUnitario(dto.getPrecioUnitario());
-            artProv.setPuntoPedido(dto.getPuntoPedido());
-
-
-            // Agregar ArtículoProveedor
-            ArticuloProveedor artProv = new ArticuloProveedor();
             artProv.setProveedor(proveedor);
             artProvs.add(artProv);
-            artProv.setCargoPedido(dto.getCargoPedido());
-            artProv.setCostoCompra(dto.getCostoCompra());
-            artProv.setDemoraEntrega(dto.getDemoraEntrega());
-            artProv.setPrecioUnitario(dto.getPrecioUnitario());
-            artProv.setPuntoPedido(dto.getPuntoPedido());
             articulo.setArtProveedores(artProvs);
 
             // Guardar cambios

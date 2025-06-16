@@ -52,9 +52,9 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
     }
 
     @PostMapping("/addProveedor")
-    public ResponseEntity<?> addProveedor(@RequestParam Long prov, @RequestParam Long art){
+    public ResponseEntity<?> addProveedor(@RequestBody DTOArticuloAddProveedor dtoAddProveedor){
         try{
-            servicio.addProveedor(prov,art);
+            servicio.addProveedor(dtoAddProveedor);
             return ResponseEntity.status(HttpStatus.OK).body("{\" Proveedor añadido al artículo correctamente }\"");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\" error\":\"Error," + e.getMessage() + "}\"");

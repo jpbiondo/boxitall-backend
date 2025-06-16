@@ -40,10 +40,10 @@ public class ProveedorService extends BaseEntityServiceImpl<Proveedor, Long> {
 
     @Transactional
 
-    public Proveedor altaProveedor(DTOAltaProveedor dtoAltaProveedor, Long idArt) throws Exception {
+    public Proveedor altaProveedor(DTOAltaProveedor dtoAltaProveedor) throws Exception {
         try {
             DTOProveedor dtoProveedor = dtoAltaProveedor.getDtoProveedor();
-            DTOArticuloProveedor dtoArticuloProveedor = dtoAltaProveedor.getDtoArticuloProveedor();
+            DTOArticuloAddProveedor dtoArticuloProveedor = dtoAltaProveedor.getDtoArticuloAddProveedor();
 
             if (proveedorRepository.existsByProveedorCod((dtoProveedor.getProveedorCod()))){
                 throw new Exception("El proveedor con codigo " + dtoProveedor.getProveedorCod() + " ya está registrado.");
@@ -58,7 +58,7 @@ public class ProveedorService extends BaseEntityServiceImpl<Proveedor, Long> {
 
             Proveedor savedProveedor = proveedorRepository.save(proveedor);
             // Asegurarse de que el proveedor esté asociado a al menos un artículo
-            articuloService.addProveedor(savedProveedor.getId(), idArt,dtoArticuloProveedor);
+            articuloService.addProveedor(dtoArticuloProveedor);
             return savedProveedor;
         }
         catch(Exception e){
