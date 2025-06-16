@@ -69,52 +69,7 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\" error\":\"Error," + e.getMessage() + "}\"");
         }
     }
-    /*//agregue estos endpoints para revisarlos en postman, luego hay que eliminarlos
-    //calculo de Modelo Lote Fijo
-    @PostMapping("/{id}/calcular-lote-optimo")
-    public ResponseEntity<?> calcularLoteOptimo(@PathVariable Long id) {
-        try {
-            Optional<Integer> loteOptimo = servicio.calcularLoteOptimo(id);
-            if (loteOptimo.isPresent()) {
-                return ResponseEntity.status(HttpStatus.OK).body("{\"message\": \"Lote óptimo calculado exitosamente\", \"loteOptimo\": " + loteOptimo.get() + "}");
-            }
-            else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No se pudo calcular el Lote Óptimo.");
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error al calcular el Lote Óptimo.");
-        }
-    }
-
-
-    @PostMapping("/{id}/calcular-punto-pedido")
-    public ResponseEntity<?> calcularPuntoPedido(@PathVariable Long id) {
-        try {
-            Optional<Integer> puntoPedido = service.calcularPuntoPedido(id);
-            if (puntoPedido.isPresent()) {
-                return ResponseEntity.status(HttpStatus.OK).body("{\"message\": \"Punto Pedido calculado exitosamente\", \"punto pedido\": " + puntoPedido.get() + "}");
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No se pudo calcular el Punto de Pedido.");
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error al calcular el Punto de Pedido.");
-        }
-    }
-
-    @PostMapping("/{id}/calcular-stock-seguridad")
-    public ResponseEntity<?> calcularStockSeguridad(@PathVariable Long id) {
-        try {
-            Optional<Integer> stockSeguridad = service.calcularStockSeguridad(id);
-            if (stockSeguridad.isPresent()) {
-                return ResponseEntity.status(HttpStatus.OK).body("{\"message\": \"Stock de seguridad calculado exitosamente\", \"stock seguridad\": " + stockSeguridad.get() + "}");
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No se pudo calcular el Stock de Seguridad.");
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error al calcular el Stock de Seguridad.");
-        }
-    }
-
+    /* lo deje porque no se bien como lo vamos a implementar definitivamente
     @PostMapping("/{idArticulo}/calcularCGI")
     public ResponseEntity<?> calcularCGI(@PathVariable Long idArticulo) {
         try {

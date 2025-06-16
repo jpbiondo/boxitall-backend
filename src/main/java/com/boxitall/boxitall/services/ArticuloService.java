@@ -180,11 +180,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             //Settear proveedor
             articulo.setProvPred(proveedor);
 
-            /*calcularLoteOptimo(articulo);
-            calcularStockSeguridad(articulo);
-            calcularPuntoPedido(articulo);
-            calcularCGI(articulo);*/
-            // Intentar calcular el lote óptimo
+            // Intentar calcular el lote optimo
             Optional<Integer> loteOptimo = calcularLoteOptimo(articulo);
             if (loteOptimo.isEmpty()) {
                 throw new RuntimeException("No se pudo calcular el lote óptimo.");
