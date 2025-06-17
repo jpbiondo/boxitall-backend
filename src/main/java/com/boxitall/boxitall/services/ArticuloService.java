@@ -216,14 +216,14 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
             // Intentar calcular el punto de pedido
             if (articulo.getModeloInventario() instanceof ArticuloModeloLoteFijo) {
-                Optional<Integer> puntoPedido = calcularPuntoPedido(articulo);
-                if (puntoPedido.isEmpty()) {
-                    throw new RuntimeException("No se pudo calcular el punto de pedido.");
-                }
+                float puntoPedido = calcularPuntoPedido(articulo);
+//                if (puntoPedido.isEmpty()) {
+//                    throw new RuntimeException("No se pudo calcular el punto de pedido.");
+//                }
             }
 
             // Intentar calcular el Costo de Gestión de Inventarios (CGI)
-//            float cgi = calcularCGI(articulo);
+            float cgi = calcularCGI(articulo);
 //            if (cgi.isEmpty()) {
 //                throw new RuntimeException("No se pudo calcular el Costo de Gestión de Inventarios (CGI).");
 //            }
@@ -287,7 +287,10 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         MiniDTOModeloInventario miniDTOModelo = datosModeloInventario(articulo.getModeloInventario());
         MiniDTOProvPred miniDTOProvPred = datosProvPred(articulo);
 
-        float cantidadProximoPedido = articulo.getStock() - miniDTOModelo.getCantProxPedido();
+        float cantidadProximoPedido = 0;
+
+        if (articulo.getModeloInventario() instanceof ArticuloModeloLoteFijo)
+            cantidadProximoPedido = articulo.getStock() - ((ArticuloModeloLoteFijo) articulo.getModeloInventario()).getPuntoPedido();
 
         // Creamos el dto en sí
         DTOArticuloListado dto = new DTOArticuloListado(
@@ -333,8 +336,8 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     @Getter
     private class MiniDTOModeloInventario {
         private String modeloNombre;
-        private LocalDateTime fechaProxPedido; // Fecha concreta o estimada
-        private float cantProxPedido; // Cantidad a pedir, concreta o estimada
+        private LocalDateTime fechaProxPedido;
+        private float cantProxPedido; // Básicamente, lote óptimo
     }
 
     // Retorna el nombre del modelo, la fecha (estimada) y la cantidad (estimada) del próximo pedido
@@ -449,10 +452,11 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     }
 
     @Transactional
-    public Optional<Integer> calcularPuntoPedido(Articulo articulo) {
+    public float calcularPuntoPedido(Articulo articulo) {
         try {
 
             // Obtener el modelo de inventario, que debe ser de tipo ArticuloModeloLoteFijo
+            if (!(articulo.getModeloInventario() instanceof ArticuloModeloLoteFijo)) return 0;
 
             ArticuloModeloLoteFijo modeloLoteFijo = (ArticuloModeloLoteFijo) articulo.getModeloInventario();
 
@@ -460,7 +464,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
             // Si no se puede obtener el ArticuloProveedor, devolvemos Optional.empty()
             if (articuloProveedorPred.isEmpty()) {
-                return Optional.empty();
+                return 0;
             }
 
             ArticuloProveedor articuloProveedor = articuloProveedorPred.get();
@@ -476,16 +480,16 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             modeloLoteFijo.setPuntoPedido((int)puntoPedido);
             save(articulo);
 
-            return Optional.of((int) puntoPedido);
+            return puntoPedido;
 
         } catch (IllegalArgumentException e) {
             // Excepción para modelo de inventario incorrecto
             System.err.println(e.getMessage());
-            return Optional.empty();
+            return 0;
         } catch (Exception e) {
             // Captura de cualquier otro tipo de excepción
             e.printStackTrace();
-            return Optional.empty();
+            return 0;
         }
     }
     @Transactional
