@@ -1,9 +1,6 @@
 package com.boxitall.boxitall.controllers;
 
-import com.boxitall.boxitall.dtos.ordencompra.DTOOrdenCompraAlta;
-import com.boxitall.boxitall.dtos.ordencompra.DTOOrdenCompraListadoActivas;
-import com.boxitall.boxitall.dtos.ordencompra.DTOOrdenCompraObtenerDetalle;
-import com.boxitall.boxitall.dtos.ordencompra.DTORtdoAltaOrdenCompra;
+import com.boxitall.boxitall.dtos.ordencompra.*;
 import com.boxitall.boxitall.entities.OrdenCompra;
 import com.boxitall.boxitall.services.OrdenCompraService;
 import org.springframework.http.HttpStatus;
@@ -94,13 +91,18 @@ public class OrdenCompraController extends BaseEntityControllerImpl<OrdenCompra,
         }
         return ResponseEntity.ok(ordenes);
     }
+    @PostMapping("/{idOrden}/detalle/agregar-articulo")
+    public ResponseEntity<DTOOrdenCompraObtenerDetalle> agregarArticuloAOrden(
+            @PathVariable Long idOrden,
+            @RequestBody DTOOrdenCompraArticuloAlta nuevoDetalleDTO) {
 
-
-
-
-
-
-
+        try {
+            DTOOrdenCompraObtenerDetalle resultado = service.agregarArticuloAOrden(idOrden, nuevoDetalleDTO);
+            return ResponseEntity.ok(resultado);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
 
 }
 
