@@ -224,6 +224,26 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
             throw new RuntimeException("Error al obtener las órdenes de compra: " + e.getMessage(), e);
         }
     }
+    @Transactional
+    public DTOOrdenCompraObtenerDetalle agregarArticuloAOrden(Long idOrden, DTOOrdenCompraArticuloAlta nuevodetalledto) {
+        try {
+            OrdenCompra orden = ordenCompraRepository.findById(idOrden)
+                    .orElseThrow(() -> new RuntimeException("Orden de compra no encontrada."));
+
+            OrdenCompraEstadoOC estadoActual = orden.getEstadoActual(orden);
+            if (!"PENDIENTE".equals(estadoActual.getEstado().getNombre())) {
+                throw new RuntimeException("Solo se pueden modificar órdenes en estado PENDIENTE.");
+            }
+            OrdenCompraArticulo nuevoDetalle = ordenCompraArticuloService.altaDetalle( nuevodetalledto);
+            orden.getDetalles().add(nuevoDetalle);
+            ordenCompraRepository.save(orden);
+
+            return obtenerDetalleOrdenCompra(idOrden);
+        } catch (Exception e) {
+            throw new RuntimeException("Error al agregar artículo a la orden: " + e.getMessage(), e);
+        }
+    }
+
 
 
 
