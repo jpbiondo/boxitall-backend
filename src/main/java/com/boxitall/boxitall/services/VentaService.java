@@ -1,7 +1,7 @@
 package com.boxitall.boxitall.services;
 
-import com.boxitall.boxitall.dtos.ordencompra.DTOOrdenCompra;
-import com.boxitall.boxitall.dtos.ordencompra.DTOOrdenCompraArticulo;
+import com.boxitall.boxitall.dtos.ordencompra.DTOOrdenCompraAlta;
+import com.boxitall.boxitall.dtos.ordencompra.DTOOrdenCompraArticuloAlta;
 import com.boxitall.boxitall.dtos.venta.DTOVenta;
 import com.boxitall.boxitall.dtos.venta.DTOVentaAlta;
 import com.boxitall.boxitall.dtos.venta.DTOVentaDetalle;
@@ -63,8 +63,8 @@ public class VentaService extends BaseEntityServiceImpl<Venta, Long> {
                 if (modeloNombre.equals("LoteFijo") && provPredId > 0 && !existeOCEnCurso){
                     ArticuloModeloLoteFijo modeloFijo = (ArticuloModeloLoteFijo) modeloInventario;
                     if ((stockActual - cantCompra) < modeloFijo.getPuntoPedido()){
-                        DTOOrdenCompraArticulo dtoOCA = new DTOOrdenCompraArticulo(modeloFijo.getLoteOptimo(), articuloId);
-                        DTOOrdenCompra dtoOC = new DTOOrdenCompra(new ArrayList<>(), provPredId);
+                        DTOOrdenCompraArticuloAlta dtoOCA = new DTOOrdenCompraArticuloAlta(modeloFijo.getLoteOptimo(), articuloId);
+                        DTOOrdenCompraAlta dtoOC = new DTOOrdenCompraAlta(new ArrayList<>(), provPredId);
                         dtoOC.getDetallesarticulo().add(dtoOCA);
                         ocService.altaOrdenCompra(dtoOC);
                     }

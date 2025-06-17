@@ -9,8 +9,8 @@ import java.util.List;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-public class DTOOrdenCompra {
-    private List<DTOOrdenCompraArticulo> detallesarticulo;
+public class DTOOrdenCompraAlta {
+    private List<DTOOrdenCompraArticuloAlta> detallesarticulo;
     private Long IDProveedor;
 
 }

@@ -1,8 +1,6 @@
 package com.boxitall.boxitall.services;
 
-import com.boxitall.boxitall.dtos.ordencompra.DTOOrdenCompra;
-import com.boxitall.boxitall.dtos.ordencompra.DTOOrdenCompraArticulo;
-import com.boxitall.boxitall.dtos.ordencompra.DTORtdoAltaOrdenCompra;
+import com.boxitall.boxitall.dtos.ordencompra.*;
 import com.boxitall.boxitall.entities.*;
 import com.boxitall.boxitall.repositories.*;
 import jakarta.transaction.Transactional;
@@ -28,7 +26,10 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
     ProveedorRepository proveedorRepository;
     @Autowired
     OrdenCompraArticuloRepository ordenCompraArticuloRepository;
-    public DTORtdoAltaOrdenCompra altaOrdenCompra(DTOOrdenCompra ordencompradto) {
+    @Autowired
+    ArticuloRepository articuloRepository;
+    @Transactional
+    public DTORtdoAltaOrdenCompra altaOrdenCompra(DTOOrdenCompraAlta ordencompradto) {
         List<String> errores = new ArrayList<>();
         OrdenCompra orden = new OrdenCompra();
 
@@ -49,7 +50,7 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
             orden.setProveedor(proveedor);
             orden.getHistorialEstados().add(estadoactual);
 
-            for (DTOOrdenCompraArticulo detalleDto : ordencompradto.getDetallesarticulo()) {
+            for (DTOOrdenCompraArticuloAlta detalleDto : ordencompradto.getDetallesarticulo()) {
                 try {
                     OrdenCompraArticulo detalecreado = ordenCompraArticuloService.altaDetalle(detalleDto);
                     orden.getDetalles().add(detalecreado);
@@ -63,9 +64,10 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
                 errores.add("No se pudo crear ningún detalle. Orden no creada.");
                 return new DTORtdoAltaOrdenCompra(null,errores);
             }
+             ordenCompraRepository.save(orden);
+            DTOOrdenCompraObtenerDetalle ordenGuardadadto = obtenerDetalleOrdenCompra(orden.getId());
 
-            OrdenCompra ordenGuardada = ordenCompraRepository.save(orden);
-            return new DTORtdoAltaOrdenCompra(ordenGuardada, errores);
+            return new DTORtdoAltaOrdenCompra(ordenGuardadadto, errores);
 
         } catch (Exception e) {
             errores.add("Error: " + e.getMessage());
@@ -79,7 +81,7 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
             OrdenCompra orden = ordenCompraRepository.findById(ordenCompraId)
                     .orElseThrow(() -> new RuntimeException("Orden de compra no encontrada."));
 
-            OrdenCompraEstadoOC estadoActual = orden.getNombreEstadoActual(orden);
+            OrdenCompraEstadoOC estadoActual = orden.getEstadoActual(orden);
             // verficar si se puede cancelar
             String estadoActualNombre = estadoActual.getEstado().getNombre();
             if (!"PENDIENTE".equals(estadoActualNombre)) {
@@ -106,11 +108,12 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
             throw new RuntimeException("Error al cancelar la orden de compra: " + e.getMessage(), e);
         }
     }
-        public void eliminarDetalleDeOrden(Long idOrden, Long idDetalle) {
+    @Transactional
+    public void eliminarDetalleDeOrden(Long idOrden, Long idDetalle) {
             try {
                 OrdenCompra orden = ordenCompraRepository.findById(idOrden)
                         .orElseThrow(() -> new RuntimeException("Orden de compra no encontrada."));
-                OrdenCompraEstadoOC estadoActual = orden.getNombreEstadoActual(orden);
+                OrdenCompraEstadoOC estadoActual = orden.getEstadoActual(orden);
                 OrdenCompraArticulo detalle = ordenCompraArticuloRepository.findById(idDetalle)
                         .orElseThrow(() -> new RuntimeException("Detalle no encontrado."));
                 // verfica si se puede eliminar
@@ -144,6 +147,123 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
            }
 
         }
+    @Transactional
+    public List<String> avanzarEstadoOrdenCompra(Long ordenCompraId) {
+        List<String> avisos = new ArrayList<>();
+        try {
+            OrdenCompra orden = ordenCompraRepository.findById(ordenCompraId)
+                    .orElseThrow(() -> new RuntimeException("Órden de compra no encontrada."));
+
+            OrdenCompraEstadoOC estadoActual = orden.getEstadoActual(orden);
+            String estadoActualNombre = estadoActual.getEstado().getNombre();
+
+            // Determinar siguiente estado
+            String proximoEstadoNombre = getProximoEstado(estadoActualNombre);
+            EstadoOrdenCompra proximoEstado = estadoOrdenCompraRepository.findByNombre(proximoEstadoNombre)
+                    .orElseThrow(() -> new RuntimeException("No se encontró el estado " + proximoEstadoNombre + "."));
+            OrdenCompraEstadoOC nuevoEstado = new OrdenCompraEstadoOC();
+            nuevoEstado.setEstado(proximoEstado);
+            nuevoEstado.setFechaInicio(new Date());
+            nuevoEstado.setFechaFin(null);
+
+            orden.getHistorialEstados().add(nuevoEstado);
+
+            // Si el nuevo estado es finaliza  reponer stock y controlar Punto de Pedido
+            if ("FINALIZADA".equals(proximoEstadoNombre)) {
+                avisos.addAll(reponerStockYControlarPuntoPedido(orden));
+            }
+            // Cerrar estado actual
+            estadoActual.setFechaFin(new Date());
+            ordenCompraEstadoOCRepository.save(estadoActual);
+            ordenCompraRepository.save(orden);
+            return avisos;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error al avanzar el estado de la órden de compra: " + e.getMessage(), e);
+        }
+    }
+    @Transactional
+    public DTOOrdenCompraObtenerDetalle obtenerDetalleOrdenCompra(Long idOrden) {
+        try{
+            OrdenCompra orden = ordenCompraRepository.findById(idOrden)
+                    .orElseThrow(() -> new RuntimeException("Orden de compra no encontrada."));
+            List<DTOOrdenCompraArticuloObtenerDetalle> detalleArticulos = new ArrayList<>();
+
+            for (OrdenCompraArticulo detalle : orden.getDetalles()) {
+                DTOOrdenCompraArticuloObtenerDetalle dtoDetalle = new DTOOrdenCompraArticuloObtenerDetalle(
+                        detalle.getArticulo().getId(),
+                        detalle.getRenglon(),
+                        detalle.getArticulo().getNombre(),
+                        detalle.getCantidad()
+                );
+                detalleArticulos.add(dtoDetalle);
+            }
+            return new DTOOrdenCompraObtenerDetalle(orden.getId(),detalleArticulos,orden.getNombreEstadoActual(orden));
+        } catch (Exception e) {
+            throw new RuntimeException("Error al obtener el detalle de la órden de compra: " + e.getMessage(), e);
+        }
+    }
+    @Transactional
+    public List<DTOOrdenCompraListadoActivas> obtenerOrdenesActivas(){
+        try{
+            List<OrdenCompra> ordenes = ordenCompraRepository.findOrdenesActivas();
+            if (ordenes.isEmpty()){
+                return null;
+            }
+            List<DTOOrdenCompraListadoActivas> ordenesactivas =  new ArrayList<>();
+            for(OrdenCompra orden : ordenes){
+                DTOOrdenCompraListadoActivas ordenactiva = new DTOOrdenCompraListadoActivas(
+                        orden.getId(),
+                        orden.getFechaInicio(),
+                        orden.getNombreEstadoActual(orden),
+                        orden.getProveedor().getProveedorNombre());
+                ordenesactivas.add(ordenactiva);
+            }
+        return ordenesactivas;
+        } catch (Exception e) {
+            throw new RuntimeException("Error al obtener las órdenes de compra: " + e.getMessage(), e);
+        }
+    }
+
+
+
+
+
+    // Metodos Auxiliares
+    private String getProximoEstado(String estadoActualNombre) {
+        switch (estadoActualNombre) {
+            case "PENDIENTE": return "ENVIADA";
+            case "ENVIADA": return "FINALIZADA";
+            default: throw new RuntimeException("Estado desconocido");
+        }
+    }
+    private List<String> reponerStockYControlarPuntoPedido(OrdenCompra orden) {
+        List<String> avisos = new ArrayList<>();
+
+        for (OrdenCompraArticulo detalle : orden.getDetalles()) {
+            Articulo articulo = detalle.getArticulo();
+            double cantidad = detalle.getCantidad();
+            float nuevaCantidad = (float) (articulo.getStock() + cantidad);
+
+            articulo.setStock(nuevaCantidad);
+            articuloRepository.save(articulo);
+
+            if (articulo.getModeloInventario() instanceof ArticuloModeloLoteFijo modelo) {
+                float puntoPedido = modelo.getPuntoPedido();
+                if (nuevaCantidad <= puntoPedido) {
+                    avisos.add("El artículo '" + articulo.getNombre() + "' tiene stock " + nuevaCantidad +
+                            ", que no supera el Punto de Pedido (" + puntoPedido + ")");
+                }
+            }
+        }
+
+        return avisos;
+    }
+
+
+
+
+
 
 
 
