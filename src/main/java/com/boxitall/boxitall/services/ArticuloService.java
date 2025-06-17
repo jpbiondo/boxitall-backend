@@ -75,8 +75,10 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
             // Por cada artículo vamos a crear un DTO que agregamos al array de respuesta
             for(Articulo articulo : articulos){
-                DTOArticuloListado dto = crearDtoListado(articulo); // Hacemos el dto
-                dtos.add(dto); // Agregamos el dto al array de respuesta
+                if (articulo.getFechaBaja() == null){
+                    DTOArticuloListado dto = crearDtoListado(articulo); // Hacemos el dto
+                    dtos.add(dto); // Agregamos el dto al array de respuesta//
+                }
             }
             return dtos;
         }
@@ -221,10 +223,10 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             }
 
             // Intentar calcular el Costo de Gestión de Inventarios (CGI)
-            Optional<Double> cgi = calcularCGI(articulo);
-            if (cgi.isEmpty()) {
-                throw new RuntimeException("No se pudo calcular el Costo de Gestión de Inventarios (CGI).");
-            }
+//            float cgi = calcularCGI(articulo);
+//            if (cgi.isEmpty()) {
+//                throw new RuntimeException("No se pudo calcular el Costo de Gestión de Inventarios (CGI).");
+//            }
 
             //Guardar cambios
             update(idArt, articulo);
@@ -285,10 +287,13 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         MiniDTOModeloInventario miniDTOModelo = datosModeloInventario(articulo.getModeloInventario());
         MiniDTOProvPred miniDTOProvPred = datosProvPred(articulo);
 
+        float cantidadProximoPedido = articulo.getStock() - miniDTOModelo.getCantProxPedido();
+
         // Creamos el dto en sí
         DTOArticuloListado dto = new DTOArticuloListado(
                 articulo.getId(), articulo.getNombre(), articulo.getStock(),
-                miniDTOModelo.getModeloNombre(), miniDTOModelo.getFechaProxPedido() , miniDTOModelo.getCantProxPedido(),
+                calcularCGI(articulo),
+                miniDTOModelo.getModeloNombre(), miniDTOModelo.getFechaProxPedido() , cantidadProximoPedido,
                 miniDTOProvPred.getProvId(), miniDTOProvPred.getProvNombre()
         );
         return dto;
@@ -537,7 +542,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             }
         }
 
-    public Optional<Double> calcularCGI(Articulo articulo) {
+    public float calcularCGI(Articulo articulo) {
         try {
 
             float loteOptimo = articulo.getModeloInventario().getLoteOptimo();
@@ -546,26 +551,28 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
             // Si no se puede obtener el ArticuloProveedor, devolvemos Optional.empty()
             if (articuloProveedorPred.isEmpty()) {
-                return Optional.empty();
+                return 0;
             }
 
             ArticuloProveedor articuloProveedor = articuloProveedorPred.get();
 
-            double precio = articuloProveedor.getPrecioUnitario();
-            double costoAlmacenamiento = articulo.getCostoAlmacenamiento();
-            double costoPedido = articuloProveedor.getCostoPedido();
-            double demanda= articulo.getDemanda();
+            float precio = articuloProveedor.getPrecioUnitario();
+            float costoAlmacenamiento = articulo.getCostoAlmacenamiento();
+            float costoPedido = articuloProveedor.getCostoPedido();
+            float demanda= articulo.getDemanda();
 
             // Calcula el CGI utilizando la fórmula
-            double cgi = (precio * loteOptimo)
+            float cgi = (precio * loteOptimo)
                     + (costoAlmacenamiento * (loteOptimo / 2))
                     + (costoPedido * (demanda / loteOptimo));//REVISAR, CANTIDAD VS LOTE_OPTIMO
 
-            return Optional.of(cgi);
+            if (loteOptimo == 0) cgi = 0;
+
+            return cgi;
 
         } catch (Exception e) {
             e.printStackTrace();
-            return Optional.empty();
+            return 0;
         }
 
 
