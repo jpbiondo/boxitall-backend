@@ -1,6 +1,5 @@
 package com.boxitall.boxitall.dtos.ordencompra;
 
-import com.boxitall.boxitall.entities.OrdenCompra;
 import lombok.*;
 
 import java.util.List;
@@ -11,6 +10,6 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class DTORtdoAltaOrdenCompra {
-    private OrdenCompra orden;
+    private DTOOrdenCompraObtenerDetalle ordenCompraRespuesta;
     private List<String> errores;
 }

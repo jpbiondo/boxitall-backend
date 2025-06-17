@@ -7,7 +7,7 @@ import lombok.*;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-public class DTOOrdenCompraArticulo {
+public class DTOOrdenCompraArticuloAlta {
     float cantidad ;
     Long IDarticulo;
 }

@@ -18,7 +18,7 @@ import java.util.List;
 public class OrdenCompra extends BaseEntity {
     private LocalDateTime fechaInicio;
 
-    public OrdenCompraEstadoOC getNombreEstadoActual(OrdenCompra orden) {
+    public OrdenCompraEstadoOC getEstadoActual(OrdenCompra orden) {
         for (OrdenCompraEstadoOC estadoOC : orden.getHistorialEstados()) {
             if (estadoOC.getFechaFin() == null) {
                 return estadoOC;
@@ -26,6 +26,16 @@ public class OrdenCompra extends BaseEntity {
         }
         return null;
     }
+    public String getNombreEstadoActual(OrdenCompra orden) {
+        for (OrdenCompraEstadoOC estadoOC : orden.getHistorialEstados()) {
+            if (estadoOC.getFechaFin() == null) {
+              return estadoOC.getEstado().getNombre();
+            }
+        }
+        return null;
+    }
+
+
 
 
 
