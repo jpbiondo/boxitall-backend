@@ -1,12 +1,11 @@
 package com.boxitall.boxitall.services;
 
-import com.boxitall.boxitall.dtos.ordencompra.DTOOrdenCompraArticulo;
+import com.boxitall.boxitall.dtos.ordencompra.DTOOrdenCompraArticuloAlta;
 import com.boxitall.boxitall.entities.*;
 import com.boxitall.boxitall.repositories.ArticuloRepository;
 import com.boxitall.boxitall.repositories.OrdenCompraArticuloRepository;
 import com.boxitall.boxitall.repositories.OrdenCompraEstadoOCRepository;
 import com.boxitall.boxitall.repositories.OrdenCompraRepository;
-import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +23,7 @@ public class OrdenCompraArticuloService extends BaseEntityServiceImpl<OrdenCompr
     ArticuloRepository articuloRepository ;
     @Autowired
     OrdenCompraRepository ordenCompraRepository;
-    public OrdenCompraArticulo altaDetalle(DTOOrdenCompraArticulo detalledto) {
+    public OrdenCompraArticulo altaDetalle(DTOOrdenCompraArticuloAlta detalledto) {
 
         Articulo articulo = articuloRepository.findById(detalledto.getIDarticulo())
           .orElseThrow(() -> new RuntimeException("Artículo con ID " + detalledto.getIDarticulo() + " no encontrado."));

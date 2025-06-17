@@ -30,6 +30,13 @@ public interface OrdenCompraRepository extends BaseEntityRepository<OrdenCompra,
       AND e.nombre IN ('PENDIENTE', 'ENVIADA')
 """)
     List<OrdenCompra> findOrdenesActivasByArticulo(@Param("articulo") Articulo articulo);
+    @Query("SELECT o FROM OrdenCompra o " +
+            "JOIN o.historialEstados estadoOC " +
+            "JOIN estadoOC.estado estado " +
+            "WHERE estadoOC.fechaFin IS NULL "+
+            "AND estado.nombre IN ('PENDIENTE', 'ENVIADA')")
+    List<OrdenCompra> findOrdenesActivas();
+
 
 
 

@@ -1,24 +1,24 @@
 package com.boxitall.boxitall.controllers;
 
-import com.boxitall.boxitall.dtos.ordencompra.DTOOrdenCompra;
-import com.boxitall.boxitall.dtos.ordencompra.DTORtdoAltaOrdenCompra;
+import com.boxitall.boxitall.dtos.ordencompra.*;
 import com.boxitall.boxitall.entities.OrdenCompra;
 import com.boxitall.boxitall.services.OrdenCompraService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
 @CrossOrigin(origins = "*")
 @RequestMapping("/orden-compra")
 public class OrdenCompraController extends BaseEntityControllerImpl<OrdenCompra, OrdenCompraService>{
-    @PostMapping("/altaordencompra")
-    public ResponseEntity<?> crearOrdenCompra(@RequestBody DTOOrdenCompra ordenCompraDTO) {
+    @PostMapping("/alta-orden-compra")
+    public ResponseEntity<?> crearOrdenCompra(@RequestBody DTOOrdenCompraAlta ordenCompraDTO) {
         DTORtdoAltaOrdenCompra resultado =  service.altaOrdenCompra(ordenCompraDTO);
         // Si la orden no se creó
-        if (resultado.getOrden() == null) {
+        if (resultado.getOrdenCompraRespuesta() == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of(
                             "mensaje", "No se pudo crear la orden de compra.",
@@ -30,7 +30,7 @@ public class OrdenCompraController extends BaseEntityControllerImpl<OrdenCompra,
             return ResponseEntity.status(HttpStatus.OK)
                     .body(Map.of(
                             "mensaje", "Orden de compra creada parcialmente con advertencias.",
-                            "orden", resultado.getOrden(),
+                            "orden", resultado.getOrdenCompraRespuesta(),
                             "errores", resultado.getErrores()
                     ));
         }
@@ -38,11 +38,11 @@ public class OrdenCompraController extends BaseEntityControllerImpl<OrdenCompra,
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of(
                         "mensaje", "Orden de compra creada exitosamente.",
-                        "orden", resultado.getOrden()
+                        "orden", resultado.getOrdenCompraRespuesta()
                 ));
     }
 
-   @PutMapping("/cancelar/{id}")
+   @PutMapping("/{idOrden}/detalle/cancelar-orden")
     public ResponseEntity<?> cancelarOrden(@PathVariable Long id) {
         try {
             service.cancelarOrdenCompra(id);
@@ -51,7 +51,7 @@ public class OrdenCompraController extends BaseEntityControllerImpl<OrdenCompra,
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-    @DeleteMapping("/{idOrden}/detalle/{idDetalle}")
+    @DeleteMapping("/{idOrden}/detalle/{idDetalle}/eliminar-detalle")
     public ResponseEntity<?> eliminarDetalleDeOrden(@PathVariable Long idOrden, @PathVariable Long idDetalle) {
         try {
             service.eliminarDetalleDeOrden(idOrden, idDetalle);
@@ -72,7 +72,37 @@ public class OrdenCompraController extends BaseEntityControllerImpl<OrdenCompra,
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    @PostMapping("/{idOrden}/detalle/avanzar-estado")
+    public ResponseEntity<List<String>> avanzarEstado(@PathVariable Long idOrden) {
+        List<String> avisos = service.avanzarEstadoOrdenCompra(idOrden);
+        return ResponseEntity.ok(avisos);
+    }
+    @GetMapping("/{idOrden}/detalle")
+    public ResponseEntity<DTOOrdenCompraObtenerDetalle> verDetalleOrdenCompra(@PathVariable Long idOrden) {
+        DTOOrdenCompraObtenerDetalle respuesta = service.obtenerDetalleOrdenCompra(idOrden);
+        return ResponseEntity.ok(respuesta);
+    }
+    @GetMapping("/activas")
+    public ResponseEntity<List<DTOOrdenCompraListadoActivas>> listarOrdenesActivas() {
+        List<DTOOrdenCompraListadoActivas> ordenes = service.obtenerOrdenesActivas();
 
+        if (ordenes.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(ordenes);
+    }
+    @PostMapping("/{idOrden}/detalle/agregar-articulo")
+    public ResponseEntity<DTOOrdenCompraObtenerDetalle> agregarArticuloAOrden(
+            @PathVariable Long idOrden,
+            @RequestBody DTOOrdenCompraArticuloAlta nuevoDetalleDTO) {
+
+        try {
+            DTOOrdenCompraObtenerDetalle resultado = service.agregarArticuloAOrden(idOrden, nuevoDetalleDTO);
+            return ResponseEntity.ok(resultado);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
 
 }
 
