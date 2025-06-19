@@ -12,4 +12,5 @@ public class DTOOrdenCompraArticuloObtenerDetalle {
     private int renglon ;
     private String nombreArticulo;
     private float cantidad;
+    private float precio;
 }
