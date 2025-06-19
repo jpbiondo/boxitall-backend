@@ -28,7 +28,7 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
     OrdenCompraArticuloRepository ordenCompraArticuloRepository;
     @Autowired
     ArticuloRepository articuloRepository;
-    @Transactional
+
     public DTORtdoAltaOrdenCompra altaOrdenCompra(DTOOrdenCompraAlta ordencompradto) {
         List<String> errores = new ArrayList<>();
         OrdenCompra orden = new OrdenCompra();
@@ -190,11 +190,21 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
             List<DTOOrdenCompraArticuloObtenerDetalle> detalleArticulos = new ArrayList<>();
 
             for (OrdenCompraArticulo detalle : orden.getDetalles()) {
+                Articulo articulo = detalle.getArticulo();
+                float precio = 0f;
+                boolean encontrado = false;
+
+                for (ArticuloProveedor artproveedor : articulo.getArtProveedores()) {
+                    if (artproveedor.getProveedor().getId().equals(orden.getProveedor().getId())) {
+                        precio = artproveedor.getPrecioUnitario();
+                    }
+                }
                 DTOOrdenCompraArticuloObtenerDetalle dtoDetalle = new DTOOrdenCompraArticuloObtenerDetalle(
                         detalle.getArticulo().getId(),
                         detalle.getRenglon(),
                         detalle.getArticulo().getNombre(),
-                        detalle.getCantidad()
+                        detalle.getCantidad(),
+                        precio
                 );
                 detalleArticulos.add(dtoDetalle);
             }

@@ -3,6 +3,7 @@ package com.boxitall.boxitall.controllers;
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloAddProveedor;
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloAlta;
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloDetalle;
+import com.boxitall.boxitall.dtos.articulo.DTOArticuloProveedorListado;
 import com.boxitall.boxitall.entities.Articulo;
 import com.boxitall.boxitall.services.ArticuloService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -88,6 +91,28 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\" error\":\"Error," + e.getMessage() + "}\"");
         }
     }
+    @GetMapping("/listarPorProveedor")
+    public ResponseEntity<?> listarArticulosAgrupadosPorProveedor() {
+        try {
+            Map<String, List<DTOArticuloProveedorListado>> resultado = servicio.listarArticulosPorProveedor();
+            return ResponseEntity.status(HttpStatus.OK).body(resultado);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("{\"error\": \"Error al listar artículos por proveedor: " + e.getMessage() + "\"}");
+        }
+    }
+    @GetMapping("/listarPorProveedorId")
+    public ResponseEntity<?> listarArticulosPorProveedorId(@RequestParam Long idProveedor) {
+        try {
+            List<DTOArticuloProveedorListado> articulos = servicio.listarArticulosPorProveedorId(idProveedor);
+            return ResponseEntity.status(HttpStatus.OK).body(articulos);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("{\"error\": \"Error al listar artículos del proveedor: " + e.getMessage() + "\"}");
+        }
+    }
+
+
 
     /* lo deje porque no se bien como lo vamos a implementar definitivamente
     @PostMapping("/{idArticulo}/calcularCGI")

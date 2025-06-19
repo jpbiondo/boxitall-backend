@@ -1,5 +1,6 @@
 package com.boxitall.boxitall.services;
 
+
 import com.boxitall.boxitall.dtos.ordencompra.DTOOrdenCompraArticuloAlta;
 import com.boxitall.boxitall.entities.*;
 import com.boxitall.boxitall.repositories.ArticuloRepository;
@@ -66,5 +67,6 @@ public class OrdenCompraArticuloService extends BaseEntityServiceImpl<OrdenCompr
 
         return ordenCompraArticuloRepository.save(detalleArticulo);
     }
+
 
 }
