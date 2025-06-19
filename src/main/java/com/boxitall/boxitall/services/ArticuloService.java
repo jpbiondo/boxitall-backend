@@ -1,6 +1,7 @@
 package com.boxitall.boxitall.services;
 
 import com.boxitall.boxitall.dtos.articulo.*;
+import com.boxitall.boxitall.dtos.proveedor.DTOProveedor;
 import com.boxitall.boxitall.entities.*;
 import com.boxitall.boxitall.repositories.ArticuloRepository;
 import com.boxitall.boxitall.repositories.OrdenCompraRepository;
@@ -640,6 +641,66 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         } catch (Exception e) {
             throw new RuntimeException("Error al listar artículos del proveedor: " + e.getMessage(), e);
         }
+    }
+    //listado artuculo a reponer
+    @Transactional
+    public List<DTOArticuloListado> listarProductosAReponer() {
+        List<DTOArticuloListado> productosAReponer = new ArrayList<>();
+        List<Articulo> articulos = articuloRepository.findAll();
+
+        for (Articulo articulo : articulos) {
+            if (articulo.getModeloInventario() instanceof ArticuloModeloLoteFijo) {
+                ArticuloModeloLoteFijo modelo = (ArticuloModeloLoteFijo) articulo.getModeloInventario();
+                if (articulo.getStock() <= modelo.getPuntoPedido()) {
+                    List<OrdenCompra> ordenesActivas = ordenCompraRepository.findOrdenesActivasByArticulo(articulo);
+                    if (ordenesActivas.isEmpty()) {
+                        DTOArticuloListado dto = crearDtoListado(articulo);
+                        productosAReponer.add(dto);
+                    }
+                }
+            }
+        }
+        return productosAReponer;
+    }
+    //Listado productos faltantes
+    @Transactional
+    public List<DTOArticuloListado> listarProductosFaltantes() {
+        List<DTOArticuloListado> productosFaltantes = new ArrayList<>();
+        List<Articulo> articulos = articuloRepository.findAll();
+
+        for (Articulo articulo : articulos) {
+            float stockSeguridad = articulo.getModeloInventario().getStockSeguridad();
+            if (articulo.getStock() <= stockSeguridad) {
+                DTOArticuloListado dto = crearDtoListado(articulo);
+                productosFaltantes.add(dto);
+            }
+        }
+        return productosFaltantes;
+    }
+    //Listado proveedores por articulo
+    @Transactional
+    public List<DTOProveedor> listarProveedoresPorArticulo(Long articuloId) throws Exception {
+        Articulo articulo = encontrarArticulo(articuloId);
+        List<DTOProveedor> proveedores = new ArrayList<>();
+
+        for (ArticuloProveedor artProv : articulo.getArtProveedores()) {
+            Proveedor proveedor = artProv.getProveedor();
+            DTOProveedor dtoProveedor = new DTOProveedor(
+                    proveedor.getProveedorCod(),
+                    proveedor.getProveedorNombre(),
+                    proveedor.getProveedorTelefono(),
+                    proveedor.getProveedorFechaBaja()
+            );
+            proveedores.add(dtoProveedor);
+        }
+        return proveedores;
+    }
+    //Ajuste de inventario
+    @Transactional
+    public void ajustarInventario(Long articuloId, float nuevaCantidad) throws Exception {
+        Articulo articulo = encontrarArticulo(articuloId);
+        articulo.setStock(nuevaCantidad);
+        articuloRepository.save(articulo);
     }
 
 
