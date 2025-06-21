@@ -11,6 +11,10 @@ import java.util.List;
 @Repository
 public interface ArticuloRepository extends BaseEntityRepository<Articulo, Long> {
     List<Articulo> findByProvPred(Proveedor proveedor);
+
+    @Query("SELECT art FROM Articulo art " +
+            "WHERE art.fechaBaja is not null ")
+    List<Articulo> findByBajado();
     List<Articulo> findByFechaBajaIsNullAndProvPredIsNotNull();
 
     @Query("SELECT DISTINCT a FROM Articulo a " +

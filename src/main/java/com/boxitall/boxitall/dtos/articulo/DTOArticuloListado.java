@@ -5,9 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Getter
 @Setter
@@ -17,9 +15,12 @@ public class DTOArticuloListado {
     private Long id;
     private String nombre;
     private float stock;
+
+    private float cgi;
+
     private String modeloInventario;
     private LocalDateTime fechaProximoPedido;
-    private float stockProximoPedido;
+    private float restanteProximoPedido;
     private Long proveedorPredeterminadoId;
     private String proveedorPredeterminadoNombre;
 }

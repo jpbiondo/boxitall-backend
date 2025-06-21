@@ -13,6 +13,7 @@ import org.apache.commons.math3.distribution.NormalDistribution;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -39,30 +40,65 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
             //Decidir modelo de inventario
             ArticuloModeloInventario modeloInventario;
-            switch (dto.getModeloNombre()) {
-                case "LoteFijo" -> {
-                    modeloInventario = new ArticuloModeloLoteFijo();
-                    modeloInventario.setLoteOptimo(0);  // Para evitar null pointers
+            switch (dto.getModeloInventario().getNombre()){
+                case "Lote Fijo" -> {
+                    modeloInventario = new ArticuloModeloLoteFijo(); // Todos sus atributos son calculados con el prov pred
                 }
-                case "IntervaloFijo" -> {
-                    LocalDateTime proxPedido = LocalDateTime.now().plusDays(dto.getIntervaloPedido());
-                    modeloInventario = new ArticuloModeloIntervaloFijo(proxPedido, dto.getIntervaloPedido(), dto.getInventarioMaximo());
+                case "Intervalo Fijo" -> {
+                    System.out.println(dto.getModeloInventario().getFechaProxPedido());
+                    LocalDateTime proxPedido = LocalDateTime.parse(dto.getModeloInventario().getFechaProxPedido()+"T00:00:00");
+                    modeloInventario = new ArticuloModeloIntervaloFijo(
+                            proxPedido,
+                            dto.getModeloInventario().getIntervaloPedido(),
+                            dto.getModeloInventario().getInventarioMaximo()
+                    );
                 }
                 default -> throw new RuntimeException("Modelo desconocido");
             }
 
             // Crear artículo
             Articulo articulo = new Articulo(
-                    dto.getNombre(), dto.getDescripcion(), dto.getCostoAlmacenamiento(),
-                    dto.getDemanda(), dto.getDemandaDesviacionEstandar(), dto.getNivelServicio(),
+                    dto.getNombre(), dto.getDescripcion(),dto.getCostoAlmacenamiento(),
+                    dto.getDemanda(), dto.getDesviacionEstandar(),dto.getNivelServicio(),
                     dto.getStock(), modeloInventario
             );
 
             // Guardar el artículo
-            articuloRepository.save(articulo);
+            Articulo savedArticulo = articuloRepository.save(articulo);
+
+            // Esto es completamente ineficiente, tendría que agregar los proveedores y después guardarlo para que se haga junto,
+            // pero eso implicaría romper el alta de proveedor así que ya está
+
+            // Agregar los proveedores
+            for (DTOArticuloAddProveedor dtoArtProv : dto.getArticuloProveedores()){
+                addProveedor(dtoArtProv);
+            }
+
+            // Agregar prov pred
+            if( dto.getProvPredId() != null){
+                setProveedorPred(dto.getProvPredId(), savedArticulo.getId());
+            }
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Transactional
+    public List<DTOArticuloBajado> bajados(){
+        List<Articulo> articulos = articuloRepository.findByBajado();
+        List<DTOArticuloBajado> dtos = new ArrayList<>();
+        if (articulos.isEmpty())
+            throw new RuntimeException("No hay artículos dados de baja");
+        for (Articulo articulo: articulos){
+            DTOArticuloBajado dto = new DTOArticuloBajado(
+                    articulo.getId(), articulo.getNombre(), articulo.getDescripcion(),
+                    articulo.getCostoAlmacenamiento(), articulo.getNivelServicio(),
+                    articulo.getFechaBaja()
+                    );
+            dtos.add(dto);
+        }
+        return dtos;
     }
 
     @Transactional
@@ -72,9 +108,11 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             List<DTOArticuloListado> dtos = new ArrayList<>(); //Crea el array de respuesta
 
             // Por cada artículo vamos a crear un DTO que agregamos al array de respuesta
-            for (Articulo articulo : articulos) {
-                DTOArticuloListado dto = crearDtoListado(articulo); // Hacemos el dto
-                dtos.add(dto); // Agregamos el dto al array de respuesta
+            for(Articulo articulo : articulos){
+                if (articulo.getFechaBaja() == null){
+                    DTOArticuloListado dto = crearDtoListado(articulo); // Hacemos el dto
+                    dtos.add(dto); // Agregamos el dto al array de respuesta//
+                }
             }
             return dtos;
         } catch (Exception e) {
@@ -111,14 +149,39 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             Articulo articulo = encontrarArticulo(id);
 
             //Obtener la info del modelo de inventario
-            MiniDTOModeloInventario miniDTO = datosModeloInventario(articulo.getModeloInventario());
+            DTOArticuloModeloInventario dtoModelo = datosModeloInventario(articulo.getModeloInventario());
             MiniDTOProvPred miniDTOProvPred = datosProvPred(articulo);
 
+            // Dar lo restante para el prox pedido si es de Lote Fijo
+            float restanteProximoPedido = 0;
+            if (dtoModelo instanceof DTOArticuloModeloLoteFijo)
+                restanteProximoPedido = articulo.getStock() - ((DTOArticuloModeloLoteFijo) dtoModelo).getPuntoPedido();
+
+            // Armar el listado de proveedores
+            List<DTOArticuloProveedor> dtoArtProvs = new ArrayList<>();
+            for (ArticuloProveedor artProv : articulo.getArtProveedores()){
+                DTOProveedor dtoProv = new DTOProveedor(
+                        artProv.getProveedor().getId(), artProv.getProveedor().getProveedorCod(),
+                        artProv.getProveedor().getProveedorNombre(), artProv.getProveedor().getProveedorTelefono(),
+                        artProv.getProveedor().getProveedorFechaBaja()
+                );
+                DTOArticuloProveedor dtoArtProv = new DTOArticuloProveedor(
+                        artProv.getCostoCompra(), artProv.getCargoPedido(), artProv.getCostoPedido(),
+                        artProv.getDemoraEntrega(), artProv.getPrecioUnitario(), artProv.getPuntoPedido(),
+                        dtoProv
+                );
+                dtoArtProvs.add(dtoArtProv);
+            }
+
+
             DTOArticuloDetalle dto = new DTOArticuloDetalle(
-                    articulo.getId(), articulo.getNombre(), articulo.getStock(), articulo.getDescripcion(), articulo.getCostoAlmacenamiento(),
-                    miniDTO.getModeloNombre(), miniDTO.getFechaProxPedido(), miniDTO.getCantProxPedido(),
+                    articulo.getId(), articulo.getNombre(), articulo.getStock(), articulo.getDemanda(),
+                    articulo.getDescripcion(), articulo.getCostoAlmacenamiento(), articulo.getNivelServicio(),
+                    dtoModelo, restanteProximoPedido,
                     miniDTOProvPred.getProvId(), miniDTOProvPred.getProvNombre(),
-                    10, 10, 10, 10, 10 // TODO - CGI
+                    10,10,10,10,10, // TODO - CGI
+                    dtoArtProvs
+
             );
             return dto;
         } catch (Exception e) {
@@ -210,17 +273,17 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
             // Intentar calcular el punto de pedido
             if (articulo.getModeloInventario() instanceof ArticuloModeloLoteFijo) {
-                Optional<Integer> puntoPedido = calcularPuntoPedido(articulo);
-                if (puntoPedido.isEmpty()) {
-                    throw new RuntimeException("No se pudo calcular el punto de pedido.");
-                }
+                float puntoPedido = calcularPuntoPedido(articulo);
+//                if (puntoPedido.isEmpty()) {
+//                    throw new RuntimeException("No se pudo calcular el punto de pedido.");
+//                }
             }
 
             // Intentar calcular el Costo de Gestión de Inventarios (CGI)
-            Optional<Double> cgi = calcularCGI(articulo);
-            if (cgi.isEmpty()) {
-                throw new RuntimeException("No se pudo calcular el Costo de Gestión de Inventarios (CGI).");
-            }
+            float cgi = calcularCGI(articulo);
+//            if (cgi.isEmpty()) {
+//                throw new RuntimeException("No se pudo calcular el Costo de Gestión de Inventarios (CGI).");
+//            }
 
             //Guardar cambios
             update(idArt, articulo);
@@ -277,13 +340,22 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     private DTOArticuloListado crearDtoListado(Articulo articulo) {
 
         // Obtenemos el nombre del modelo, la fecha (estimada) y la cantidad (estimada) del próximo pedido
-        MiniDTOModeloInventario miniDTOModelo = datosModeloInventario(articulo.getModeloInventario());
+        DTOArticuloModeloInventario dtoModelo = datosModeloInventario(articulo.getModeloInventario());
         MiniDTOProvPred miniDTOProvPred = datosProvPred(articulo);
+
+        float cantidadProximoPedido = 0;
+        LocalDateTime fechaProximo = LocalDateTime.now();
+
+        if (articulo.getModeloInventario() instanceof ArticuloModeloLoteFijo)
+            cantidadProximoPedido = articulo.getStock() - ((ArticuloModeloLoteFijo) articulo.getModeloInventario()).getPuntoPedido();
+        else
+            fechaProximo = ((DTOArticuloModeloIntervaloFijo)dtoModelo).getFechaProximoPedido();
 
         // Creamos el dto en sí
         DTOArticuloListado dto = new DTOArticuloListado(
                 articulo.getId(), articulo.getNombre(), articulo.getStock(),
-                miniDTOModelo.getModeloNombre(), miniDTOModelo.getFechaProxPedido(), miniDTOModelo.getCantProxPedido(),
+                calcularCGI(articulo),
+                dtoModelo.getNombre(), fechaProximo , cantidadProximoPedido,
                 miniDTOProvPred.getProvId(), miniDTOProvPred.getProvNombre()
         );
         return dto;
@@ -323,47 +395,33 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     @Getter
     private class MiniDTOModeloInventario {
         private String modeloNombre;
-        private LocalDateTime fechaProxPedido; // Fecha concreta o estimada
-        private float cantProxPedido; // Cantidad a pedir, concreta o estimada
+        private LocalDateTime fechaProxPedido;
+        private float cantProxPedido; // Básicamente, lote óptimo
     }
 
     // Retorna el nombre del modelo, la fecha (estimada) y la cantidad (estimada) del próximo pedido
-    private MiniDTOModeloInventario datosModeloInventario(ArticuloModeloInventario modeloInventario) {
-        MiniDTOModeloInventario dto = new MiniDTOModeloInventario();
+    private DTOArticuloModeloInventario datosModeloInventario(ArticuloModeloInventario modeloInventario){
+        DTOArticuloModeloInventario dto;
 
+        String modeloNombre = "";
         // Obtener el nombre del modelo
-        String modeloNombre = modeloInventario.getClass().toString();
-        int length = modeloNombre.length() - 1;
-        int index = 0;
-        for (int i = length; i > 0; i--) {
-            if (modeloNombre.charAt(i) == '.') {
-                index = i + 1 + 14;  // El +1 es para que no empiece desde el punto, el + 14 para que no incluya "ArticuloModelo"
-                break;
-            }
+        if (modeloInventario instanceof ArticuloModeloLoteFijo){
+            dto = new DTOArticuloModeloLoteFijo(
+                    modeloInventario.getLoteOptimo(),
+                    ((ArticuloModeloLoteFijo) modeloInventario).getPuntoPedido()
+            );
+            dto.setNombre("Lote Fijo");
+            dto.setStockSeguridad(modeloInventario.getStockSeguridad());
         }
-        // Settear el nombre del modelo
-        modeloNombre = modeloNombre.substring(index);
-        dto.setModeloNombre(modeloNombre);
-
-        // Obtener la fecha y stock de próximo pedido
-        LocalDateTime proxPedido;
-        float stockPedido;
-        switch (modeloNombre) {
-            case "LoteFijo" -> {
-                ArticuloModeloLoteFijo modeloEspecifico = (ArticuloModeloLoteFijo) modeloInventario;
-                proxPedido = LocalDateTime.now(); // TODO - Este valor no se usa
-                stockPedido = modeloEspecifico.getLoteOptimo();
-            }
-            case "IntervaloFijo" -> {
-                ArticuloModeloIntervaloFijo modeloEspecifico = (ArticuloModeloIntervaloFijo) modeloInventario;
-                proxPedido = modeloEspecifico.getFechaProximoPedido();
-                stockPedido = 0; // TODO - Este valor no se usa
-            }
-            default -> throw new RuntimeException("El artículo no posee modelo de inventario");
+        else {
+            dto = new DTOArticuloModeloIntervaloFijo(
+                    ((ArticuloModeloIntervaloFijo) modeloInventario).getIntervaloPedido(),
+                    ((ArticuloModeloIntervaloFijo) modeloInventario).getInventarioMaximo(),
+                    ((ArticuloModeloIntervaloFijo) modeloInventario).getFechaProximoPedido()
+            );
+            dto.setNombre("Intervalo Fijo");
+            dto.setStockSeguridad(modeloInventario.getStockSeguridad());
         }
-        //Settear la fecha y stock del próximo pedido
-        dto.setFechaProxPedido(proxPedido);
-        dto.setCantProxPedido(stockPedido);
 
         return dto;
     }
@@ -439,10 +497,11 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     }
 
     @Transactional
-    public Optional<Integer> calcularPuntoPedido(Articulo articulo) {
+    public float calcularPuntoPedido(Articulo articulo) {
         try {
 
             // Obtener el modelo de inventario, que debe ser de tipo ArticuloModeloLoteFijo
+            if (!(articulo.getModeloInventario() instanceof ArticuloModeloLoteFijo)) return 0;
 
             ArticuloModeloLoteFijo modeloLoteFijo = (ArticuloModeloLoteFijo) articulo.getModeloInventario();
 
@@ -450,7 +509,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
             // Si no se puede obtener el ArticuloProveedor, devolvemos Optional.empty()
             if (articuloProveedorPred.isEmpty()) {
-                return Optional.empty();
+                return 0;
             }
 
             ArticuloProveedor articuloProveedor = articuloProveedorPred.get();
@@ -466,16 +525,16 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             modeloLoteFijo.setPuntoPedido((int) puntoPedido);
             save(articulo);
 
-            return Optional.of((int) puntoPedido);
+            return puntoPedido;
 
         } catch (IllegalArgumentException e) {
             // Excepción para modelo de inventario incorrecto
             System.err.println(e.getMessage());
-            return Optional.empty();
+            return 0;
         } catch (Exception e) {
             // Captura de cualquier otro tipo de excepción
             e.printStackTrace();
-            return Optional.empty();
+            return 0;
         }
     }
 
@@ -532,7 +591,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         }
     }
 
-    public Optional<Double> calcularCGI(Articulo articulo) {
+    public float calcularCGI(Articulo articulo) {
         try {
 
             float loteOptimo = articulo.getModeloInventario().getLoteOptimo();
@@ -541,26 +600,28 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
             // Si no se puede obtener el ArticuloProveedor, devolvemos Optional.empty()
             if (articuloProveedorPred.isEmpty()) {
-                return Optional.empty();
+                return 0;
             }
 
             ArticuloProveedor articuloProveedor = articuloProveedorPred.get();
 
-            double precio = articuloProveedor.getPrecioUnitario();
-            double costoAlmacenamiento = articulo.getCostoAlmacenamiento();
-            double costoPedido = articuloProveedor.getCostoPedido();
-            double demanda = articulo.getDemanda();
+            float precio = articuloProveedor.getPrecioUnitario();
+            float costoAlmacenamiento = articulo.getCostoAlmacenamiento();
+            float costoPedido = articuloProveedor.getCostoPedido();
+            float demanda= articulo.getDemanda();
 
             // Calcula el CGI utilizando la fórmula
-            double cgi = (precio * loteOptimo)
+            float cgi = (precio * loteOptimo)
                     + (costoAlmacenamiento * (loteOptimo / 2))
                     + (costoPedido * (demanda / loteOptimo));//REVISAR, CANTIDAD VS LOTE_OPTIMO
 
-            return Optional.of(cgi);
+            if (loteOptimo == 0) cgi = 0;
+
+            return cgi;
 
         } catch (Exception e) {
             e.printStackTrace();
-            return Optional.empty();
+            return 0;
         }
 
 
@@ -686,6 +747,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         for (ArticuloProveedor artProv : articulo.getArtProveedores()) {
             Proveedor proveedor = artProv.getProveedor();
             DTOProveedor dtoProveedor = new DTOProveedor(
+                    proveedor.getId(),
                     proveedor.getProveedorCod(),
                     proveedor.getProveedorNombre(),
                     proveedor.getProveedorTelefono(),

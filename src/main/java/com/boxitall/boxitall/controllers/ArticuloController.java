@@ -30,6 +30,15 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
         }
     }
 
+    @GetMapping("/bajados")
+    public ResponseEntity<?> bajados() {
+        try{
+            return ResponseEntity.status(HttpStatus.OK).body(servicio.bajados());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\" error\":\"Error," + e.getMessage() + "}\"");
+        }
+    }
+
     @GetMapping("/getDetalles")
     public ResponseEntity<?> getDetalles(@RequestParam Long id) {
         try {
