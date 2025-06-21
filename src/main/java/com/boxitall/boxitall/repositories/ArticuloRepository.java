@@ -22,4 +22,5 @@ public interface ArticuloRepository extends BaseEntityRepository<Articulo, Long>
             "WHERE ap.proveedor = :proveedor AND a.fechaBaja IS NULL")
     List<Articulo> findArticulosActivosbyProveedor(@Param("proveedor") Proveedor proveedor);
 
+
 }

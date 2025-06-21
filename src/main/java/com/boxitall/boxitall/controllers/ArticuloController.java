@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -159,6 +160,8 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\": \"" + e.getMessage() + "\"}");
         }
     }
+
+
 
 
     /* lo deje porque no se bien como lo vamos a implementar definitivamente
