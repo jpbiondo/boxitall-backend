@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Setter
 @AllArgsConstructor
 public class DTOProveedor {
+    private Long proveedorId;
     private int proveedorCod;
     private String proveedorNombre;
     private String proveedorTelefono;
