@@ -1,10 +1,12 @@
 package com.boxitall.boxitall.services;
 
 
+import com.boxitall.boxitall.dtos.articulo.DTOArticuloListado;
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloProveedor;
 import com.boxitall.boxitall.dtos.proveedor.DTOAltaProveedor;
 import com.boxitall.boxitall.dtos.proveedor.DTOProveedor;
 import com.boxitall.boxitall.entities.Articulo;
+import com.boxitall.boxitall.entities.ArticuloProveedor;
 import com.boxitall.boxitall.entities.OrdenCompra;
 import com.boxitall.boxitall.entities.Proveedor;
 import com.boxitall.boxitall.repositories.ArticuloProveedorRepository;
@@ -15,6 +17,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -66,6 +69,30 @@ public class ProveedorService extends BaseEntityServiceImpl<Proveedor, Long> {
 
 
     }
+    @Transactional
+    public List<DTOProveedor> listAll(){
+        try{
+            List<Proveedor> proveedores = proveedorRepository.findAll(); //Encuentra todos los artículos
+            List<DTOProveedor> dtos = new ArrayList<>(); //Crea el array de respuesta
+            for (Proveedor proveedor : proveedores) {
+                DTOProveedor dto = new DTOProveedor(
+                        proveedor.getId(),
+                        proveedor.getProveedorCod(),
+                        proveedor.getProveedorNombre(),
+                        proveedor.getProveedorTelefono(),
+                        proveedor.getProveedorFechaBaja()
+                );
+                dtos.add(dto);
+            }
+
+            return dtos;
+        }
+        catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
     @Override
     public boolean delete(Long id) throws Exception {
         try {
@@ -97,12 +124,5 @@ public class ProveedorService extends BaseEntityServiceImpl<Proveedor, Long> {
             throw new Exception(e.getMessage());
         }
     }
-    /*public List<Articulo> obtenerArticulosPorProveedor(Long idProveedor) {
-        // Obtener el proveedor desde la base de datos
-        Proveedor proveedor = proveedorRepository.findById(idProveedor)
-                .orElseThrow(() -> new RuntimeException("Proveedor no encontrado"));
 
-        // Obtener todos los artículos asociados con este proveedor
-        return articuloProveedorRepository.findArticulosByProveedorId(proveedor.getId());
-    }*/
 }

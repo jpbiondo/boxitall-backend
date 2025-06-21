@@ -10,6 +10,7 @@ import java.util.Date;
 @Setter
 @AllArgsConstructor
 public class DTOProveedor {
+    private Long id;
     private int proveedorCod;
     private String proveedorNombre;
     private String proveedorTelefono;

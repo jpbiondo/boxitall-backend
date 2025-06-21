@@ -1,9 +1,6 @@
 package com.boxitall.boxitall.services;
 
-import com.boxitall.boxitall.dtos.articulo.DTOArticuloAlta;
-import com.boxitall.boxitall.dtos.articulo.DTOArticuloDetalle;
-import com.boxitall.boxitall.dtos.articulo.DTOArticuloListado;
-import com.boxitall.boxitall.dtos.articulo.DTOArticuloProveedor;
+import com.boxitall.boxitall.dtos.articulo.*;
 import com.boxitall.boxitall.entities.*;
 import com.boxitall.boxitall.repositories.ArticuloRepository;
 import com.boxitall.boxitall.repositories.OrdenCompraArticuloRepository;
@@ -523,6 +520,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
 
     }
+
     //Falta calculo de intervalo Fijo
 
 }

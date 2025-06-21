@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -69,6 +70,8 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\" error\":\"Error," + e.getMessage() + "}\"");
         }
     }
+
+
     /* lo deje porque no se bien como lo vamos a implementar definitivamente
     @PostMapping("/{idArticulo}/calcularCGI")
     public ResponseEntity<?> calcularCGI(@PathVariable Long idArticulo) {
