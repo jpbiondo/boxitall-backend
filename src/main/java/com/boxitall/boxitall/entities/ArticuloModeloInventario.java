@@ -13,5 +13,5 @@ import lombok.Setter;
 @NoArgsConstructor
 public abstract class ArticuloModeloInventario extends BaseEntity{
     private float stockSeguridad;
-    private Integer  loteOptimo;
+    private float loteOptimo;
 }

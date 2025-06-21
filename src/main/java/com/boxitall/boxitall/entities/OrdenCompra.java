@@ -1,14 +1,14 @@
 package com.boxitall.boxitall.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @NoArgsConstructor
@@ -16,11 +16,39 @@ import java.util.Date;
 @Getter
 @Setter
 public class OrdenCompra extends BaseEntity {
-    private Date fechaInicio;
+    private LocalDateTime fechaInicio;
+
+    public OrdenCompraEstadoOC getEstadoActual(OrdenCompra orden) {
+        for (OrdenCompraEstadoOC estadoOC : orden.getHistorialEstados()) {
+            if (estadoOC.getFechaFin() == null) {
+                return estadoOC;
+            }
+        }
+        return null;
+    }
+    public String getNombreEstadoActual(OrdenCompra orden) {
+        for (OrdenCompraEstadoOC estadoOC : orden.getHistorialEstados()) {
+            if (estadoOC.getFechaFin() == null) {
+              return estadoOC.getEstado().getNombre();
+            }
+        }
+        return null;
+    }
+
+
+
+
 
     @ManyToOne
     @JoinColumn(name = "proveedor_id")
     private Proveedor proveedor;
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "orden_compra_id")
+    private List<OrdenCompraEstadoOC> historialEstados = new ArrayList<>();
 
-    //private String estado; //revisar, lo puse para hacer la logica de que no puedo dar de baja un proveedor si hay una oc pendiente
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "orden_compra_id")
+    private List<OrdenCompraArticulo> detalles = new ArrayList<>();
+
+
 }

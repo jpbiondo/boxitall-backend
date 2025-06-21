@@ -1,7 +1,6 @@
 package com.boxitall.boxitall.controllers;
 
 
-import com.boxitall.boxitall.dtos.articulo.DTOArticuloProveedor;
 import com.boxitall.boxitall.dtos.proveedor.DTOAltaProveedor;
 import com.boxitall.boxitall.entities.Articulo;
 import com.boxitall.boxitall.entities.Proveedor;
@@ -22,10 +21,10 @@ public class ProveedorController extends BaseEntityControllerImpl<Proveedor, Pro
 
 
     @PostMapping("/alta")
-    public ResponseEntity<?> altaProveedor(@RequestBody DTOAltaProveedor dtoAltaProveedor, @RequestParam Long idArt) {
+    public ResponseEntity<?> altaProveedor(@RequestBody DTOAltaProveedor dtoAltaProveedor) {
         try {
 
-            Proveedor savedProveedor = proveedorService.altaProveedor(dtoAltaProveedor, idArt);
+            Proveedor savedProveedor = proveedorService.altaProveedor(dtoAltaProveedor);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(savedProveedor);
         } catch (Exception e) {

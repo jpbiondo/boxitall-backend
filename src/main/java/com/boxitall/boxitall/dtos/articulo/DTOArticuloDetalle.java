@@ -5,8 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.time.LocalDateTime;
-import java.util.Date;
+import java.util.List;
 
 @Getter
 @Setter
@@ -17,13 +16,14 @@ public class DTOArticuloDetalle {
     private Long id;
     private String nombre;
     private float stock;
+    private float demanda;
     private String descripcion;
     private float costoAlmacenamiento;
+    private float nivelServicio;
 
     //Modelo inventario
-    private String modeloInventario;
-    private LocalDateTime fechaProximoPedido; // Para modelo intervalo fijo
-    private float stockProximoPedido; // Para modelo lote fijo
+    private DTOArticuloModeloInventario modeloInventario;
+    private float restanteProximoPedido;
 
     //Proveedor predeterminado
     private Long proveedorPredeterminadoId;
@@ -36,7 +36,7 @@ public class DTOArticuloDetalle {
     private float cgiTotal;
     private float cgiUnidades;
 
-    // Listado proveedores?
-
-
+    private List<DTOArticuloProveedor> articuloProveedores;
+    // TODO - Listado proveedores?
 }
+

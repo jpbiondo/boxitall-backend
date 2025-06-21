@@ -1,16 +1,18 @@
 package com.boxitall.boxitall.services;
 
+import com.boxitall.boxitall.dtos.ordencompra.DTOOrdenCompraAlta;
+import com.boxitall.boxitall.dtos.ordencompra.DTOOrdenCompraArticuloAlta;
 import com.boxitall.boxitall.dtos.venta.DTOVenta;
 import com.boxitall.boxitall.dtos.venta.DTOVentaAlta;
 import com.boxitall.boxitall.dtos.venta.DTOVentaDetalle;
-import com.boxitall.boxitall.entities.Articulo;
-import com.boxitall.boxitall.entities.Venta;
-import com.boxitall.boxitall.entities.VentaDetalle;
+import com.boxitall.boxitall.entities.*;
+import com.boxitall.boxitall.repositories.OrdenCompraRepository;
 import com.boxitall.boxitall.repositories.VentaRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -20,16 +22,24 @@ public class VentaService extends BaseEntityServiceImpl<Venta, Long> {
     ArticuloService articuloService;
     @Autowired
     VentaRepository repository;
+    @Autowired
+    OrdenCompraService ocService;
+    @Autowired
+    OrdenCompraRepository ordenCompraRepository;
 
     @Transactional
     public void altaVenta(DTOVentaAlta dto){
         try{
             List<VentaDetalle> detalles = new ArrayList<>();
-            int i = 0; // Contador para los renglones
+            int renglon = 0; // Contador para los renglones
             for (Long articuloId : dto.getId_cantidad().keySet()){
 
                 float cantCompra = dto.getId_cantidad().get(articuloId); // Cantidad a comprar
                 Articulo articulo = articuloService.findById(articuloId);
+
+                //Verificamos que el artículo sea comprable (no de baja y con proveedor predeterminado)
+                if (articulo.getProvPred() == null) throw new RuntimeException("El artículo no está listo para ser vendido al no tener proveedor predeterminado");
+                if (articulo.getFechaBaja() == null) throw new RuntimeException("El artíuclo está dado de baja y no puede ser vendido");
 
                 // Verificamos los imposibles
                 if (cantCompra <= 0) throw new RuntimeException("No se pueden comprar cantidades negativas o iguales a cero");
@@ -39,16 +49,35 @@ public class VentaService extends BaseEntityServiceImpl<Venta, Long> {
                 float stockActual = articulo.getStock();
                 articulo.setStock(stockActual - cantCompra);
 
-                // TODO - Hacer la Orden de Compra
+                //Checkeamos el modelo de inventario
+                ArticuloModeloInventario modeloInventario = articulo.getModeloInventario();
+                String modeloNombre = getModeloNombre(modeloInventario);
 
-                VentaDetalle detalle = new VentaDetalle(cantCompra, i, articulo);
+                //Checkeamos si el artículo tiene proveedor predeterminado
+                Long provPredId = getProvPredId(articulo);
+
+                //Checkeamos si existe una Orden de compra pendiente o enviada para el artículo
+                boolean existeOCEnCurso = checkOCActivas(articulo);
+
+                // Si es modelo de lote fijo y bajamos del punto de pedido y existe proveedor predeterminado, hacer Orden de Compra
+                if (modeloNombre.equals("LoteFijo") && provPredId > 0 && !existeOCEnCurso){
+                    ArticuloModeloLoteFijo modeloFijo = (ArticuloModeloLoteFijo) modeloInventario;
+                    if ((stockActual - cantCompra) < modeloFijo.getPuntoPedido()){
+                        DTOOrdenCompraArticuloAlta dtoOCA = new DTOOrdenCompraArticuloAlta(modeloFijo.getLoteOptimo(), articuloId);
+                        DTOOrdenCompraAlta dtoOC = new DTOOrdenCompraAlta(new ArrayList<>(), provPredId);
+                        dtoOC.getDetallesarticulo().add(dtoOCA);
+                        ocService.altaOrdenCompra(dtoOC);
+                    }
+                }
+
+                VentaDetalle detalle = new VentaDetalle(cantCompra, renglon, articulo);
                 detalles.add(detalle);
-                i++;
+                renglon++;
             }
             // Verificamos que la venta tenga al menos un detalle (al menos 1 artículo elegido)
-            if (i == 0) throw new RuntimeException("No hay artículos seleccionados");
+            if (renglon == 0) throw new RuntimeException("No hay artículos seleccionados");
 
-            Venta venta = new Venta(new Date(), detalles);
+            Venta venta = new Venta(LocalDateTime.now(), detalles);
 
             repository.save(venta);
 
@@ -56,6 +85,7 @@ public class VentaService extends BaseEntityServiceImpl<Venta, Long> {
             throw new RuntimeException(e);
         }
     }
+
 
     @Transactional
     public DTOVenta getOne(Long id) throws Exception {
@@ -92,6 +122,40 @@ public class VentaService extends BaseEntityServiceImpl<Venta, Long> {
             }
             return dtoRetorno;
         } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // ------ Funciones auxiliares
+
+    // Nos da el nombre del modelo de inventario
+    private String getModeloNombre(ArticuloModeloInventario modeloInventario) {
+        String modeloNombre = modeloInventario.getClass().toString();
+        int length = modeloNombre.length() - 1;
+        int index = 0;
+        for (int i = length; i > 0; i--){
+            if (modeloNombre.charAt(i) == '.'){
+                index = i + 1 + 14 ;  // El +1 es para que no empiece desde el punto, el + 14 para que no incluya "ArticuloModelo"
+                break;
+            }
+        }
+        modeloNombre = modeloNombre.substring(index);
+        return modeloNombre;
+    }
+
+    // Nos da el ID del proveedor predeterminado o 0 si no tiene proveedor predeterminado
+    private Long getProvPredId(Articulo articulo){
+        if (articulo.getProvPred() == null) return 0L;
+        return articulo.getProvPred().getId();
+    }
+
+    // Devuelve verdadero en caso de que exista una Orden de Compra en estado pendiente o enviada para este artículo, falso en caso contrario
+    private boolean checkOCActivas(Articulo articulo){
+        try{
+            List<OrdenCompra> ordenesCompra = ordenCompraRepository.findOrdenesActivasByArticulo(articulo);
+            return !ordenesCompra.isEmpty();
+        }
+        catch (Exception e){
             throw new RuntimeException(e);
         }
     }

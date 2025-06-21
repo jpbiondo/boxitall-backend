@@ -4,16 +4,17 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
 @AllArgsConstructor
 public class DTOProveedor {
+   // private Long proveedorId;
     private Long id;
     private int proveedorCod;
     private String proveedorNombre;
     private String proveedorTelefono;
-    private Date proveedorFechaBaja;
+    private LocalDateTime proveedorFechaBaja;
 
 }

@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -24,7 +25,7 @@ public class Articulo extends BaseEntity {
     private float nivelServicio;
     private float stock;
 
-    private Date fechaBaja;
+    private LocalDateTime fechaBaja;
 
     //Relaciones
     @ManyToOne

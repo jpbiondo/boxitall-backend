@@ -1,4 +1,4 @@
-package com.boxitall.boxitall.dtos;
+package com.boxitall.boxitall.dtos.ordencompra;
 
 import lombok.*;
 
@@ -7,7 +7,7 @@ import lombok.*;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
-public class DTOOrdenCompraArticulo {
+public class DTOOrdenCompraArticuloAlta {
     float cantidad ;
     Long IDarticulo;
 }

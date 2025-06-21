@@ -18,10 +18,10 @@ import java.util.Date;
 public class OrdenCompraEstadoOC extends BaseEntity{
    private Date fechaFin;
    private Date fechaInicio;
-    @ManyToOne
+
+   @ManyToOne
     @JoinColumn
     private EstadoOrdenCompra estado;
-    @ManyToOne
-    @JoinColumn
-    private OrdenCompra ordenCompra;
+
+
 }

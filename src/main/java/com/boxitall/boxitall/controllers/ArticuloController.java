@@ -1,16 +1,16 @@
 package com.boxitall.boxitall.controllers;
 
-import com.boxitall.boxitall.dtos.articulo.DTOArticuloAlta;
-import com.boxitall.boxitall.dtos.articulo.DTOArticuloDetalle;
-import com.boxitall.boxitall.dtos.articulo.DTOArticuloProveedor;
+import com.boxitall.boxitall.dtos.articulo.*;
+import com.boxitall.boxitall.dtos.proveedor.DTOProveedor;
 import com.boxitall.boxitall.entities.Articulo;
-import com.boxitall.boxitall.entities.Proveedor;
 import com.boxitall.boxitall.services.ArticuloService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,7 +27,16 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
         try {
             return ResponseEntity.status(HttpStatus.OK).body(servicio.listAll());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\":\"Error, por favor intente más tarde\"}");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\" error\":\"Error," + e.getMessage() + "}\"");
+        }
+    }
+
+    @GetMapping("/bajados")
+    public ResponseEntity<?> bajados() {
+        try{
+            return ResponseEntity.status(HttpStatus.OK).body(servicio.bajados());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\" error\":\"Error," + e.getMessage() + "}\"");
         }
     }
 
@@ -52,9 +61,9 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
     }
 
     @PostMapping("/addProveedor")
-    public ResponseEntity<?> addProveedor(@RequestParam Long prov, @RequestParam Long art, @RequestBody DTOArticuloProveedor dtoArticuloProveedor) {
-        try {
-            servicio.addProveedor(prov, art, dtoArticuloProveedor);
+    public ResponseEntity<?> addProveedor(@RequestBody DTOArticuloAddProveedor dtoAddProveedor){
+        try{
+            servicio.addProveedor(dtoAddProveedor);
             return ResponseEntity.status(HttpStatus.OK).body("{\" Proveedor añadido al artículo correctamente }\"");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\" error\":\"Error," + e.getMessage() + "}\"");
@@ -70,6 +79,89 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\" error\":\"Error," + e.getMessage() + "}\"");
         }
     }
+
+    @DeleteMapping("/quitarProveedor")
+    public ResponseEntity<?> quitarProveedor(@RequestParam Long proveedorId, @RequestParam Long articuloId){
+        try{
+            servicio.quitarProveedor(proveedorId,articuloId);
+            return ResponseEntity.status(HttpStatus.OK).body("{\" Proveedor quitado para el artículo ingresado }\"");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\" error\":\"Error," + e.getMessage() + "}\"");
+        }
+    }
+
+    @DeleteMapping("/bajaArticulo")
+    public ResponseEntity<?> bajaArticulo(@RequestParam Long id){
+        try{
+            servicio.bajaArticulo(id);
+            return ResponseEntity.status(HttpStatus.OK).body("{\" Proveedor quitado para el artículo ingresado }\"");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\" error\":\"Error," + e.getMessage() + "}\"");
+        }
+    }
+    @GetMapping("/listarPorProveedor")
+    public ResponseEntity<?> listarArticulosAgrupadosPorProveedor() {
+        try {
+            Map<String, List<DTOArticuloProveedorListado>> resultado = servicio.listarArticulosPorProveedor();
+            return ResponseEntity.status(HttpStatus.OK).body(resultado);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("{\"error\": \"Error al listar artículos por proveedor: " + e.getMessage() + "\"}");
+        }
+    }
+    @GetMapping("/listarPorProveedorId")
+    public ResponseEntity<?> listarArticulosPorProveedorId(@RequestParam Long idProveedor) {
+        try {
+            List<DTOArticuloProveedorListado> articulos = servicio.listarArticulosPorProveedorId(idProveedor);
+            return ResponseEntity.status(HttpStatus.OK).body(articulos);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("{\"error\": \"Error al listar artículos del proveedor: " + e.getMessage() + "\"}");
+        }
+    }
+
+    //Listado Productos a reponer
+    @GetMapping("/listarProductosAReponer")
+    public ResponseEntity<?> listarProductosAReponer() {
+        try {
+            List<DTOArticuloListado> productos = servicio.listarProductosAReponer();
+            return ResponseEntity.status(HttpStatus.OK).body(productos);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+    //Listado productos faltantes
+    @GetMapping("/listarProductosFaltantes")
+    public ResponseEntity<?> listarProductosFaltantes() {
+        try {
+            List<DTOArticuloListado> productos = servicio.listarProductosFaltantes();
+            return ResponseEntity.status(HttpStatus.OK).body(productos);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+    //Listado proveedores por articulo
+    @GetMapping("/listarProveedoresPorArticulo")
+    public ResponseEntity<?> listarProveedoresPorArticulo(@RequestParam Long articuloId) {
+        try {
+            List<DTOProveedor> proveedores = servicio.listarProveedoresPorArticulo(articuloId);
+            return ResponseEntity.status(HttpStatus.OK).body(proveedores);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+    //Ajuste de inventario
+    @PutMapping("/ajustarInventario")
+    public ResponseEntity<?> ajustarInventario(@RequestParam Long articuloId, @RequestParam float nuevaCantidad) {
+        try {
+            servicio.ajustarInventario(articuloId, nuevaCantidad);
+            return ResponseEntity.status(HttpStatus.OK).body("{\"message\": \"Inventario ajustado correctamente\"}");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+    }
+
+
 
 
     /* lo deje porque no se bien como lo vamos a implementar definitivamente

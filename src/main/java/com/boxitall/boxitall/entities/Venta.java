@@ -6,8 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -16,7 +16,7 @@ import java.util.List;
 @Getter
 @Setter
 public class Venta extends BaseEntity {
-    private Date fechaVenta;
+    private LocalDateTime fechaVenta;
 
     //Relaciones
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)

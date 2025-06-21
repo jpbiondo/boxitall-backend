@@ -5,8 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @Getter
@@ -15,6 +15,6 @@ import java.util.List;
 @NoArgsConstructor
 public class DTOVenta {
     private Long id;
-    private Date fechaVenta;
+    private LocalDateTime fechaVenta;
     private List<DTOVentaDetalle> detalles = new ArrayList<>();
 }

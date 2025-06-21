@@ -1,6 +1,6 @@
 package com.boxitall.boxitall.dtos.proveedor;
 
-import com.boxitall.boxitall.dtos.articulo.DTOArticuloProveedor;
+import com.boxitall.boxitall.dtos.articulo.DTOArticuloAddProveedor;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,5 +8,5 @@ import lombok.Setter;
 @Setter
 public class DTOAltaProveedor {
     private DTOProveedor dtoProveedor;
-    private DTOArticuloProveedor dtoArticuloProveedor;
+    private DTOArticuloAddProveedor dtoArticuloAddProveedor;
 }

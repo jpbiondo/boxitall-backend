@@ -1,18 +1,17 @@
 package com.boxitall.boxitall.services;
 
-import com.boxitall.boxitall.dtos.DTOOrdenCompraArticulo;
-import com.boxitall.boxitall.entities.Articulo;
-import com.boxitall.boxitall.entities.OrdenCompra;
-import com.boxitall.boxitall.entities.OrdenCompraArticulo;
-import com.boxitall.boxitall.entities.OrdenCompraEstadoOC;
+
+import com.boxitall.boxitall.dtos.ordencompra.DTOOrdenCompraArticuloAlta;
+import com.boxitall.boxitall.entities.*;
 import com.boxitall.boxitall.repositories.ArticuloRepository;
 import com.boxitall.boxitall.repositories.OrdenCompraArticuloRepository;
 import com.boxitall.boxitall.repositories.OrdenCompraEstadoOCRepository;
 import com.boxitall.boxitall.repositories.OrdenCompraRepository;
-import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -25,7 +24,7 @@ public class OrdenCompraArticuloService extends BaseEntityServiceImpl<OrdenCompr
     ArticuloRepository articuloRepository ;
     @Autowired
     OrdenCompraRepository ordenCompraRepository;
-    public void altaDetalle(DTOOrdenCompraArticulo detalledto, OrdenCompra orden) {
+    public OrdenCompraArticulo altaDetalle(DTOOrdenCompraArticuloAlta detalledto) {
 
         Articulo articulo = articuloRepository.findById(detalledto.getIDarticulo())
           .orElseThrow(() -> new RuntimeException("Artículo con ID " + detalledto.getIDarticulo() + " no encontrado."));
@@ -42,46 +41,32 @@ public class OrdenCompraArticuloService extends BaseEntityServiceImpl<OrdenCompr
 
          // a ordenCompraArticulo
         OrdenCompraArticulo detalleArticulo = new OrdenCompraArticulo();
-        detalleArticulo.setOrdenCompra(orden);
         detalleArticulo.setArticulo(articulo);
         detalleArticulo.setCantidad(detalledto.getCantidad());
-        ordenCompraArticuloRepository.save(detalleArticulo);
-    }
-    @Transactional
-    public void delate (Long id){
-        // Buscar el detalle
-        OrdenCompraArticulo detalle = ordenCompraArticuloRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Detalle con id " + id + " no encontrado."));
 
-        OrdenCompra orden = detalle.getOrdenCompra();
-        OrdenCompraEstadoOC estadoActual = ordenCompraEstadoOCRepository
-                .findByOrdenCompraAndFechaFinIsNull(detalle.getOrdenCompra())
-                .orElseThrow(() -> new RuntimeException("Estado actual no encontrado para la orden."));
-        if (!"PENDIENTE".equalsIgnoreCase(estadoActual.getEstado().getNombre())) {
-            throw new RuntimeException("No se puede eliminar el detalle porque la orden está en estado distinto de PENDIENTE.");
+
+
+        // Obtener el modelo de inventario
+        String modeloNombre = articulo.getModeloInventario().getClass().toString();
+        int length = modeloNombre.length() - 1;
+        int index = 0;
+        for (int i = length; i > 0; i--) {
+            if (modeloNombre.charAt(i) == '.') {
+                index = i + 1 + 14;  // El +1 es para que no empiece desde el punto, el + 14 para que no incluya "ArticuloModelo"
+                break;
+            }
         }
-        ordenCompraArticuloRepository.delete(detalle);
-    }
-
-    @Transactional
-    public OrdenCompraArticulo updatecantidad(Long id, float nuevaCantidad) {
-        // buscar el detalle
-        OrdenCompraArticulo detalle = ordenCompraArticuloRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Detalle con id " + id + " no encontrado."));
-        // verificar estado actual de la orden
-        OrdenCompra orden = detalle.getOrdenCompra();
-        OrdenCompraEstadoOC estadoActual = ordenCompraEstadoOCRepository
-                .findByOrdenCompraAndFechaFinIsNull(detalle.getOrdenCompra())
-                .orElseThrow(() -> new RuntimeException("Estado actual no encontrado para la orden."));
-
-        //Validar que el estado sea PENDIENTE
-        if (!"PENDIENTE".equalsIgnoreCase(estadoActual.getEstado().getNombre())) {
-            throw new RuntimeException("No se puede modificar la orden porque está en estado ENVIADA.");
+        modeloNombre = modeloNombre.substring(index);
+        // Si es de intervalo fijo le settea la fecha de próximo pedido, si es otro no hace nada
+        if (modeloNombre.equals("IntervaloFijo")) {
+            ArticuloModeloIntervaloFijo modeloInventario = (ArticuloModeloIntervaloFijo) articulo.getModeloInventario();
+            // Trunca la fecha a días (para que sea al inicio del mismo) y le suma el intervalo de pedido
+            modeloInventario.setFechaProximoPedido(LocalDateTime.now().truncatedTo(ChronoUnit.DAYS).plusDays(modeloInventario.getIntervaloPedido()));
         }
-        //Actualizar la cantidad
-        detalle.setCantidad(nuevaCantidad);
 
-        return ordenCompraArticuloRepository.save(detalle);
+
+        return ordenCompraArticuloRepository.save(detalleArticulo);
     }
+
 
 }
