@@ -53,8 +53,8 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             }
 
             // Agregar prov pred
-            if( dto.getProvPredId() != null){
-                setProveedorPred(dto.getProvPredId(), savedArticulo.getId());
+            if( dto.getProveedorPredeterminadoId() != null){
+                setProveedorPred(dto.getProveedorPredeterminadoId(), savedArticulo.getId());
             }
 
             update(savedArticulo.getId(), savedArticulo);
@@ -102,28 +102,21 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
             // Loopeamos de vuelta para asegurarnos de no agregar los que fueron eliminados
             loopExistentes: for (ArticuloProveedor artProv : articulo.getArtProveedores()){
-                System.out.println("Artprovs length = "+ articulo.getArtProveedores().size());
                 for (DTOArticuloAddProveedor dtoArtProv : dto.getArticuloProveedores()){
                     if (artProv.getProveedor().getId() == dtoArtProv.getProveedorId()){
-                        System.out.println("This one stays");
                         continue loopExistentes;
                     }
                 }
                 // No había dtoArtProv que fuera igual, por lo tanto es que ya no existe ese artProv y no lo agregamos al nuevo array
-                System.out.println("This one dies");
-                System.out.println(newArtProvs.indexOf(artProv));
                 newArtProvs.remove(artProv);
-                System.out.println("Problem further?");
-                System.out.println("Artprovs length = "+ articulo.getArtProveedores().size());
             }
 
             articulo.setArtProveedores(newArtProvs);
 
             // Agregar/ cambiar prov pred
-//            if( dto.getProvPredId() != null){
-//                setProveedorPred(dto.getProvPredId(), articulo.getId());
-//            }
-
+            if( dto.getProveedorPredeterminadoId() != null){
+                setProveedorPred(dto.getProveedorPredeterminadoId(), articulo.getId());
+            }
 
             update(posibleArt.get().getId(), articulo);
 
@@ -282,7 +275,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     }
 
     @Transactional
-    public void setProveedorPred(Long idProveedor, Long idArt) {
+    public Articulo setProveedorPred(Long idProveedor, Long idArt) {
         try {
             //Encontrar el Artículo
             Articulo articulo = encontrarArticulo(idArt);
@@ -304,8 +297,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
                 throw new Exception("El proveedor ingresado no provee este artículo");
 
             if (articulo.getProvPred() == proveedor)
-                throw new RuntimeException("El proveedor ingresado ya es proveedor predeterminado de este artículo");
-
+                return articulo;
             //Settear proveedor
             articulo.setProvPred(proveedor);
 
@@ -336,7 +328,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 //            }
 
             //Guardar cambios
-            update(idArt, articulo);
+            return update(idArt, articulo);
 
 
         } catch (Exception e) {

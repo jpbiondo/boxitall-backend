@@ -20,7 +20,7 @@ public class DTOArticuloAlta {
     private float stock;
 
     //Proveedor predeterminado
-    private Long provPredId;
+    private Long proveedorPredeterminadoId;
 
     //Proveedores
     private List<DTOArticuloAddProveedor> articuloProveedores;
