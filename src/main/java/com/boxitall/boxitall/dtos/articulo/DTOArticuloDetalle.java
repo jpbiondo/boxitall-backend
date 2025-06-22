@@ -20,6 +20,7 @@ public class DTOArticuloDetalle {
     private String descripcion;
     private float costoAlmacenamiento;
     private float nivelServicio;
+    private float desviacionEstandar;
 
     //Modelo inventario
     private DTOArticuloModeloInventario modeloInventario;

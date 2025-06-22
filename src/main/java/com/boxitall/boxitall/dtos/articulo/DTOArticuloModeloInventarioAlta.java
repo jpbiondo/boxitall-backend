@@ -15,7 +15,7 @@ public class DTOArticuloModeloInventarioAlta {
     private String nombre;
 
     // Para intervalo fijo
-    private String fechaProxPedido;
+    private LocalDateTime fechaProxPedido;
     private float inventarioMaximo;
     private int intervaloPedido;
 }

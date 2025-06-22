@@ -13,6 +13,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class DTOArticuloModeloIntervaloFijo extends DTOArticuloModeloInventario {
     private int intervaloPedido;
-    private float inventarioMax;
+    private float inventarioMaximo;
     private LocalDateTime fechaProximoPedido;
 }

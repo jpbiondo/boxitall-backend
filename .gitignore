@@ -38,3 +38,6 @@ out/
 
 ### ENV ###
 .env
+
+### Connection
+src/main/resources/application.properties
