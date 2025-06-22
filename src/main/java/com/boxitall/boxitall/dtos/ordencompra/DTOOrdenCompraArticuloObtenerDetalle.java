@@ -8,9 +8,11 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 public class DTOOrdenCompraArticuloObtenerDetalle {
-    private Long IDarticulo ;
-    private int renglon ;
+    private Long IDarticulo;
+    private int renglon;
     private String nombreArticulo;
     private float cantidad;
     private float precio;
+    private Long idOCarticulo;
+    private float loteoptimo;
 }

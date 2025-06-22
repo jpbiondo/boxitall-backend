@@ -13,5 +13,10 @@ public class DTOOrdenCompraObtenerDetalle {
     private Long IDOrdenCompra;
     private List<DTOOrdenCompraArticuloObtenerDetalle> detalleArticulos;
     private String estado ;
+    private String nombreproveedor;
+    private Long idProveedor;
+
+
+
 
 }

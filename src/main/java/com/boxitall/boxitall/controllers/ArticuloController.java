@@ -102,7 +102,7 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
     @GetMapping("/listarPorProveedor")
     public ResponseEntity<?> listarArticulosAgrupadosPorProveedor() {
         try {
-            Map<String, List<DTOArticuloProveedorListado>> resultado = servicio.listarArticulosPorProveedor();
+            List<DTOArticuloGrupoProveedor> resultado = servicio.listarArticulosPorProveedor();
             return ResponseEntity.status(HttpStatus.OK).body(resultado);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

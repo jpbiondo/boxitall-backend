@@ -204,15 +204,18 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
                         detalle.getRenglon(),
                         detalle.getArticulo().getNombre(),
                         detalle.getCantidad(),
-                        precio
+                        precio,
+                        detalle.getId(),
+                         detalle.getArticulo().getModeloInventario().getLoteOptimo()
                 );
                 detalleArticulos.add(dtoDetalle);
             }
-            return new DTOOrdenCompraObtenerDetalle(orden.getId(),detalleArticulos,orden.getNombreEstadoActual(orden));
+            return new DTOOrdenCompraObtenerDetalle(orden.getId(),detalleArticulos,orden.getNombreEstadoActual(orden),orden.getProveedor().getProveedorNombre(),orden.getProveedor().getId());
         } catch (Exception e) {
             throw new RuntimeException("Error al obtener el detalle de la órden de compra: " + e.getMessage(), e);
         }
     }
+
     @Transactional
     public List<DTOOrdenCompraListadoActivas> obtenerOrdenesActivas(){
         try{

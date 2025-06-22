@@ -642,37 +642,46 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         if (!ordenesCompra.isEmpty())
             throw new RuntimeException("Hay órdenes de compra activas, no puede darse de baja al artículo");
     }
-    public Map<String, List<DTOArticuloProveedorListado>> listarArticulosPorProveedor() {
+    public List<DTOArticuloGrupoProveedor> listarArticulosPorProveedor() {
         try {
             List<Articulo> articulos = articuloRepository.findByFechaBajaIsNullAndProvPredIsNotNull();
-            Map<String, List<DTOArticuloProveedorListado>> agrupados = new LinkedHashMap<>();
+            Map<Long, DTOArticuloGrupoProveedor> mapaProveedores = new LinkedHashMap<>();
 
             for (Articulo articulo : articulos) {
                 Proveedor provPred = articulo.getProvPred();
 
                 for (ArticuloProveedor ap : articulo.getArtProveedores()) {
                     Proveedor proveedor = ap.getProveedor();
-                    String nombreProveedor = proveedor.getProveedorNombre();
+                    Long idProveedor = proveedor.getId();
 
-                    boolean esPredeterminado = provPred != null && provPred.getId().equals(proveedor.getId());
+                    // Si todavia no lo agregamos al map, lo creamos
+                    mapaProveedores.putIfAbsent(idProveedor,
+                            new DTOArticuloGrupoProveedor(idProveedor, proveedor.getProveedorNombre()));
 
+                    // Verificamos si es proveedor predeterminado
+                    boolean esPredeterminado = provPred != null && provPred.getId().equals(idProveedor);
+
+                    // Creamos el artículo
                     DTOArticuloProveedorListado dto = new DTOArticuloProveedorListado(
                             articulo.getId(),
                             articulo.getNombre(),
                             ap.getPrecioUnitario(),
-                            esPredeterminado
+                            esPredeterminado,
+                            articulo.getModeloInventario().getLoteOptimo()
                     );
 
-                    agrupados.computeIfAbsent(nombreProveedor, k -> new ArrayList<>()).add(dto);
+                    // Agregamos el artículo al grupo del proveedor
+                    mapaProveedores.get(idProveedor).getArticulos().add(dto);
                 }
             }
 
-            return agrupados;
-
+            return new ArrayList<>(mapaProveedores.values());
         } catch (Exception e) {
-            throw new RuntimeException("Error al listar los artículos agrupados por proveedor: " + e.getMessage(), e);
+            throw new RuntimeException("Error al listar artículos por proveedor: " + e.getMessage(), e);
         }
     }
+
+
     public List<DTOArticuloProveedorListado> listarArticulosPorProveedorId(Long idProveedor) {
         try {
             List<DTOArticuloProveedorListado> articulosDelProveedor = new ArrayList<>();
@@ -691,7 +700,8 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
                                 articulo.getId(),
                                 articulo.getNombre(),
                                 ap.getPrecioUnitario(),
-                                esPredeterminado
+                                esPredeterminado,
+                                articulo.getModeloInventario().getLoteOptimo()
                         );
 
                         articulosDelProveedor.add(dto);
