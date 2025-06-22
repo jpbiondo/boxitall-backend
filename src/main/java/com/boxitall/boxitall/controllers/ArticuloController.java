@@ -60,6 +60,17 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
         }
     }
 
+    @PutMapping("/updateArticulo")
+    public ResponseEntity<?> updateArticulo(@RequestParam Long id, @RequestBody DTOArticuloAlta dtoArticuloAlta){
+        try{
+            servicio.updateArticulo(id, dtoArticuloAlta);
+            return ResponseEntity.status(HttpStatus.OK).body("{\" Artículo actualizado correctamente }\"");
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\" error\":\"Error," + e.getMessage() + "}\"");
+        }
+    }
+
     @PostMapping("/addProveedor")
     public ResponseEntity<?> addProveedor(@RequestBody DTOArticuloAddProveedor dtoAddProveedor){
         try{
