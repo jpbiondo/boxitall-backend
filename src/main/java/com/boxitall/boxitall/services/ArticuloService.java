@@ -39,30 +39,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
                     throw new RuntimeException("Ya existe un artículo con este nombre");
             }
 
-            //Decidir modelo de inventario
-            ArticuloModeloInventario modeloInventario;
-            switch (dto.getModeloInventario().getNombre()){
-                case "Lote Fijo" -> {
-                    modeloInventario = new ArticuloModeloLoteFijo(); // Todos sus atributos son calculados con el prov pred
-                }
-                case "Intervalo Fijo" -> {
-                    System.out.println(dto.getModeloInventario().getFechaProxPedido());
-                    LocalDateTime proxPedido = LocalDateTime.parse(dto.getModeloInventario().getFechaProxPedido()+"T00:00:00");
-                    modeloInventario = new ArticuloModeloIntervaloFijo(
-                            proxPedido,
-                            dto.getModeloInventario().getIntervaloPedido(),
-                            dto.getModeloInventario().getInventarioMaximo()
-                    );
-                }
-                default -> throw new RuntimeException("Modelo desconocido");
-            }
-
-            // Crear artículo
-            Articulo articulo = new Articulo(
-                    dto.getNombre(), dto.getDescripcion(),dto.getCostoAlmacenamiento(),
-                    dto.getDemanda(), dto.getDesviacionEstandar(),dto.getNivelServicio(),
-                    dto.getStock(), modeloInventario
-            );
+            Articulo articulo = commonAltaUpdate(dto);
 
             // Guardar el artículo
             Articulo savedArticulo = articuloRepository.save(articulo);
@@ -72,15 +49,81 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
             // Agregar los proveedores
             for (DTOArticuloAddProveedor dtoArtProv : dto.getArticuloProveedores()){
+                dtoArtProv.setArticuloId(savedArticulo.getId());
                 addProveedor(dtoArtProv);
             }
 
             // Agregar prov pred
-            if( dto.getProvPredId() != null){
-                setProveedorPred(dto.getProvPredId(), savedArticulo.getId());
+            if( dto.getProveedorPredeterminadoId() != null){
+                setProveedorPred(dto.getProveedorPredeterminadoId(), savedArticulo.getId());
             }
 
+            update(savedArticulo.getId(), savedArticulo);
+
         } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Transactional
+    public void updateArticulo(Long artId, DTOArticuloAlta dto){
+        try{
+            Optional<Articulo> posibleArt = articuloRepository.findById(artId);
+            if (posibleArt.isEmpty())
+                throw new RuntimeException("No existe el artículo con la id ingresada, nada para modificar");
+            Articulo foundArt = posibleArt.get();
+
+            // Ponemos la info del art en sí, y del modelo nuevo
+            Articulo articulo = commonAltaUpdate(dto);
+            articulo.setId(foundArt.getId());
+            // Traemos la info que ya tenía sobre proveedores y proveedor predeterminado
+            articulo.setArtProveedores(foundArt.getArtProveedores());
+            articulo.setProvPred(foundArt.getProvPred());
+
+            // TODO - Checkear que no saque al pred ni uno con OC?
+            // Agrega / cambia todos los artProv según lo que llegó en el dto
+            loopDTOs: for (DTOArticuloAddProveedor dtoArtProv : dto.getArticuloProveedores()){
+                for (ArticuloProveedor artProv : articulo.getArtProveedores()){
+                    if (artProv.getProveedor().getId() == dtoArtProv.getProveedorId()){         // Lo que sea igual lo actualiza
+                        artProv.setPrecioUnitario(dtoArtProv.getPrecioUnitario());
+                        artProv.setDemoraEntrega(dtoArtProv.getDemoraEntrega());
+                        artProv.setCargoPedido(dtoArtProv.getCargoPedido());
+                        artProv.setCostoCompra(dtoArtProv.getCostoCompra());
+                        artProv.setCostoPedido(dtoArtProv.getCostoPedido());
+                        continue loopDTOs;
+                    }
+                }
+                // No había artProv para ese dto, se agrega un artProv
+                dtoArtProv.setArticuloId(articulo.getId());
+                articulo = addProveedor(dtoArtProv);
+            }
+
+            List<ArticuloProveedor> newArtProvs = new ArrayList<>(articulo.getArtProveedores());
+
+            // Loopeamos de vuelta para asegurarnos de no agregar los que fueron eliminados
+            loopExistentes: for (ArticuloProveedor artProv : articulo.getArtProveedores()){
+                for (DTOArticuloAddProveedor dtoArtProv : dto.getArticuloProveedores()){
+                    if (artProv.getProveedor().getId() == dtoArtProv.getProveedorId()){
+                        continue loopExistentes;
+                    }
+                }
+                // No había dtoArtProv que fuera igual, por lo tanto es que ya no existe ese artProv y no lo agregamos al nuevo array
+                newArtProvs.remove(artProv);
+            }
+
+            articulo.setArtProveedores(newArtProvs);
+
+            // Agregar/ cambiar prov pred
+            if( dto.getProveedorPredeterminadoId() != null){
+                setProveedorPred(dto.getProveedorPredeterminadoId(), articulo.getId());
+            }
+
+            update(posibleArt.get().getId(), articulo);
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
@@ -177,7 +220,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
             DTOArticuloDetalle dto = new DTOArticuloDetalle(
                     articulo.getId(), articulo.getNombre(), articulo.getStock(), articulo.getDemanda(),
-                    articulo.getDescripcion(), articulo.getCostoAlmacenamiento(), articulo.getNivelServicio(),
+                    articulo.getDescripcion(), articulo.getCostoAlmacenamiento(), articulo.getNivelServicio(), articulo.getDemandaDesviacionEstandar(),
                     dtoModelo, restanteProximoPedido,
                     miniDTOProvPred.getProvId(), miniDTOProvPred.getProvNombre(),
                     10,10,10,10,10, // TODO - CGI
@@ -192,7 +235,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
     @Transactional
     //public void addProveedor(Long idProveedor, Long idArt, DTOArticuloProveedor dto){
-    public void addProveedor(DTOArticuloAddProveedor dto) {
+    public Articulo addProveedor(DTOArticuloAddProveedor dto) {
         try {
             //Encontrar el Artículo
             Articulo articulo = encontrarArticulo(dto.getArticuloId());
@@ -226,14 +269,14 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             articulo.setArtProveedores(artProvs);
 
             // Guardar cambios
-            update(dto.getArticuloId(), articulo);
+            return update(dto.getArticuloId(), articulo);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     @Transactional
-    public void setProveedorPred(Long idProveedor, Long idArt) {
+    public Articulo setProveedorPred(Long idProveedor, Long idArt) {
         try {
             //Encontrar el Artículo
             Articulo articulo = encontrarArticulo(idArt);
@@ -255,8 +298,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
                 throw new Exception("El proveedor ingresado no provee este artículo");
 
             if (articulo.getProvPred() == proveedor)
-                throw new RuntimeException("El proveedor ingresado ya es proveedor predeterminado de este artículo");
-
+                return articulo;
             //Settear proveedor
             articulo.setProvPred(proveedor);
 
@@ -287,11 +329,11 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 //            }
 
             //Guardar cambios
-            update(idArt, articulo);
+            return update(idArt, articulo);
 
 
         } catch (Exception e) {
-            throw new RuntimeException("No se pudo establecer el proveedor predeterminado");
+            throw new RuntimeException(e.getMessage());
         }
     }
 
@@ -322,6 +364,34 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         }
     }
     // -------- Funciones auxiliares
+
+    // Parte común entre el alta y el update de artículo. Info del artículo y el modelo de inventario
+    private Articulo commonAltaUpdate(DTOArticuloAlta dto){
+        //Decidir modelo de inventario
+        ArticuloModeloInventario modeloInventario;
+        switch (dto.getModeloInventario().getNombre()){
+            case "Lote Fijo" -> {
+                modeloInventario = new ArticuloModeloLoteFijo(); // Todos sus atributos son calculados con el prov pred
+            }
+            case "Intervalo Fijo" -> {
+                modeloInventario = new ArticuloModeloIntervaloFijo(
+                        dto.getModeloInventario().getFechaProxPedido(),
+                        dto.getModeloInventario().getIntervaloPedido(),
+                        dto.getModeloInventario().getInventarioMaximo()
+                );
+            }
+            default -> throw new RuntimeException("Modelo desconocido");
+        }
+
+        // Crear artículo
+        Articulo articulo = new Articulo(
+                dto.getNombre(), dto.getDescripcion(),dto.getCostoAlmacenamiento(),
+                dto.getDemanda(), dto.getDesviacionEstandar(),dto.getNivelServicio(),
+                dto.getStock(), modeloInventario
+        );
+
+        return articulo;
+    }
 
     // Encuentra un artículo que puede o no estar
     private Articulo encontrarArticulo(Long idArt) throws Exception {
