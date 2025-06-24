@@ -28,7 +28,7 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
     OrdenCompraArticuloRepository ordenCompraArticuloRepository;
     @Autowired
     ArticuloRepository articuloRepository;
-
+   @Transactional
     public DTORtdoAltaOrdenCompra altaOrdenCompra(DTOOrdenCompraAlta ordencompradto) {
         List<String> errores = new ArrayList<>();
         OrdenCompra orden = new OrdenCompra();
@@ -49,22 +49,25 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
             orden.setFechaInicio(LocalDateTime.now());
             orden.setProveedor(proveedor);
             orden.getHistorialEstados().add(estadoactual);
-
+             int renglon = 1 ;
             for (DTOOrdenCompraArticuloAlta detalleDto : ordencompradto.getDetallesarticulo()) {
                 try {
                     OrdenCompraArticulo detalecreado = ordenCompraArticuloService.altaDetalle(detalleDto);
+                    detalecreado.setRenglon(renglon);
                     orden.getDetalles().add(detalecreado);
+                    renglon++ ;
                 } catch (Exception e) {
                     errores.add("Artículo ID " + detalleDto.getIDarticulo() + ": " + e.getMessage());
                 }
             }
 
             //  si no pued crear ningún detalle
-            if (orden.getDetalles().isEmpty()) {
+            List<OrdenCompraArticulo> detalles = orden.getDetalles();
+            if (detalles.isEmpty()) {
                 errores.add("No se pudo crear ningún detalle. Orden no creada.");
                 return new DTORtdoAltaOrdenCompra(null,errores);
             }
-             ordenCompraRepository.save(orden);
+            ordenCompraRepository.save(orden);
             DTOOrdenCompraObtenerDetalle ordenGuardadadto = obtenerDetalleOrdenCompra(orden.getId());
 
             return new DTORtdoAltaOrdenCompra(ordenGuardadadto, errores);
@@ -110,26 +113,26 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
     }
     @Transactional
     public void eliminarDetalleDeOrden(Long idOrden, Long idDetalle) {
-            try {
-                OrdenCompra orden = ordenCompraRepository.findById(idOrden)
-                        .orElseThrow(() -> new RuntimeException("Orden de compra no encontrada."));
-                OrdenCompraEstadoOC estadoActual = orden.getEstadoActual(orden);
-                OrdenCompraArticulo detalle = ordenCompraArticuloRepository.findById(idDetalle)
-                        .orElseThrow(() -> new RuntimeException("Detalle no encontrado."));
-                // verfica si se puede eliminar
-                String estadoActualNombre = estadoActual.getEstado().getNombre();
-                if (!"PENDIENTE".equals(estadoActualNombre)) {
-                    throw new RuntimeException("Solo se pueden modificar órdenes en estado PENDIENTE.");
-                }
-                orden.getDetalles().remove(detalle);
-                ordenCompraRepository.save(orden);
-            } catch (Exception e) {
-                throw new RuntimeException("Error eliminar el detalle de la orden de compra: " + e.getMessage(), e);
+        try {
+            OrdenCompra orden = ordenCompraRepository.findById(idOrden)
+                    .orElseThrow(() -> new RuntimeException("Orden de compra no encontrada."));
+            OrdenCompraEstadoOC estadoActual = orden.getEstadoActual(orden);
+            OrdenCompraArticulo detalle = ordenCompraArticuloRepository.findById(idDetalle)
+                    .orElseThrow(() -> new RuntimeException("Detalle no encontrado."));
+            // verfica si se puede eliminar
+            String estadoActualNombre = estadoActual.getEstado().getNombre();
+            if (!"PENDIENTE".equals(estadoActualNombre)) {
+                throw new RuntimeException("Solo se pueden modificar órdenes en estado PENDIENTE.");
             }
+            orden.getDetalles().remove(detalle);
+            ordenCompraRepository.save(orden);
+        } catch (Exception e) {
+            throw new RuntimeException("Error eliminar el detalle de la orden de compra: " + e.getMessage(), e);
         }
+    }
     @Transactional
     public void actualizarCantidadDetalle(Long idOrden, Long idDetalle, Integer nuevaCantidad) {
-           try{
+        try{
             if (nuevaCantidad == null || nuevaCantidad <= 0) {
                 throw new RuntimeException("La cantidad debe ser mayor a cero.");
             }
@@ -142,11 +145,11 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
 
             detalle.setCantidad(nuevaCantidad);
             ordenCompraArticuloRepository.save(detalle);
-           } catch (Exception e) {
-               throw new RuntimeException("Error al modificar el detalle de la orden de compra: " + e.getMessage(), e);
-           }
-
+        } catch (Exception e) {
+            throw new RuntimeException("Error al modificar el detalle de la orden de compra: " + e.getMessage(), e);
         }
+
+    }
     @Transactional
     public List<String> avanzarEstadoOrdenCompra(Long ordenCompraId) {
         List<String> avisos = new ArrayList<>();
@@ -206,7 +209,7 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
                         detalle.getCantidad(),
                         precio,
                         detalle.getId(),
-                         detalle.getArticulo().getModeloInventario().getLoteOptimo()
+                        detalle.getArticulo().getModeloInventario().getLoteOptimo()
                 );
                 detalleArticulos.add(dtoDetalle);
             }
@@ -232,7 +235,7 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
                         orden.getProveedor().getProveedorNombre());
                 ordenesactivas.add(ordenactiva);
             }
-        return ordenesactivas;
+            return ordenesactivas;
         } catch (Exception e) {
             throw new RuntimeException("Error al obtener las órdenes de compra: " + e.getMessage(), e);
         }

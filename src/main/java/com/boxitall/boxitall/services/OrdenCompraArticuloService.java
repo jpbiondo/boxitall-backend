@@ -7,8 +7,11 @@ import com.boxitall.boxitall.repositories.ArticuloRepository;
 import com.boxitall.boxitall.repositories.OrdenCompraArticuloRepository;
 import com.boxitall.boxitall.repositories.OrdenCompraEstadoOCRepository;
 import com.boxitall.boxitall.repositories.OrdenCompraRepository;
+import org.springframework.transaction.annotation.Transactional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -24,19 +27,20 @@ public class OrdenCompraArticuloService extends BaseEntityServiceImpl<OrdenCompr
     ArticuloRepository articuloRepository ;
     @Autowired
     OrdenCompraRepository ordenCompraRepository;
+
     public OrdenCompraArticulo altaDetalle(DTOOrdenCompraArticuloAlta detalledto) {
 
         Articulo articulo = articuloRepository.findById(detalledto.getIDarticulo())
           .orElseThrow(() -> new RuntimeException("Artículo con ID " + detalledto.getIDarticulo() + " no encontrado."));
 
          // verificar si ya hay OC activa
-        List<OrdenCompra> ordenesActivas = ordenCompraRepository.findOrdenesActivasByArticulo(articulo);
+       List<OrdenCompra> ordenesActivas = ordenCompraRepository.findOrdenesActivasByArticulo(articulo);
         if (!ordenesActivas.isEmpty()) {
-            try {
-                throw new Exception("El articulo"+articulo.getId()+"tiene órdenes de compra activas.");
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+            throw new IllegalStateException(
+                String.format("No se puede crear el detalle de la orden de compra. El artículo %d (%s) tiene %d orden(es) de compra activa(s).",
+                articulo.getId(), 
+                articulo.getNombre(), 
+                ordenesActivas.size()));
         }
 
          // a ordenCompraArticulo
