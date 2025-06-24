@@ -1,5 +1,6 @@
 package com.boxitall.boxitall.dtos.ordencompra;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.List;
 @NoArgsConstructor
 public class DTOOrdenCompraAlta {
     private List<DTOOrdenCompraArticuloAlta> detallesarticulo;
+    @JsonProperty("IDProveedor")
     private Long IDProveedor;
 
 }
