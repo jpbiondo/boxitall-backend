@@ -117,7 +117,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             articulo.setArtProveedores(newArtProvs);
 
             // Agregar/ cambiar prov pred
-            if( dto.getProveedorPredeterminadoId() != null){
+            if( dto.getProveedorPredeterminadoId() != 0){
                 setProveedorPred(dto.getProveedorPredeterminadoId(), articulo.getId());
             }
 
@@ -798,9 +798,19 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         List<Articulo> articulos = articuloRepository.findAll();
 
         for (Articulo articulo : articulos) {
-            if (articulo.getModeloInventario() instanceof ArticuloModeloLoteFijo) {
-                ArticuloModeloLoteFijo modelo = (ArticuloModeloLoteFijo) articulo.getModeloInventario();
+            if (articulo.getFechaBaja() != null)
+                continue;
+            if (articulo.getModeloInventario() instanceof ArticuloModeloLoteFijo modelo) {
                 if (articulo.getStock() <= modelo.getPuntoPedido()) {
+                    List<OrdenCompra> ordenesActivas = ordenCompraRepository.findOrdenesActivasByArticulo(articulo);
+                    if (ordenesActivas.isEmpty()) {
+                        DTOArticuloListado dto = crearDtoListado(articulo);
+                        productosAReponer.add(dto);
+                    }
+                }
+            }
+            else  if (articulo.getModeloInventario() instanceof ArticuloModeloIntervaloFijo modelo) {
+                if (modelo.getFechaProximoPedido().isBefore(LocalDateTime.now())) {
                     List<OrdenCompra> ordenesActivas = ordenCompraRepository.findOrdenesActivasByArticulo(articulo);
                     if (ordenesActivas.isEmpty()) {
                         DTOArticuloListado dto = crearDtoListado(articulo);
@@ -813,15 +823,22 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     }
     //Listado productos faltantes
     @Transactional
-    public List<DTOArticuloListado> listarProductosFaltantes() {
-        List<DTOArticuloListado> productosFaltantes = new ArrayList<>();
+    public List<DTOArticuloFaltante> listarProductosFaltantes() {
+        List<DTOArticuloFaltante> productosFaltantes = new ArrayList<>();
         List<Articulo> articulos = articuloRepository.findAll();
 
         for (Articulo articulo : articulos) {
+            if (articulo.getFechaBaja() != null)
+                continue;
             float stockSeguridad = articulo.getModeloInventario().getStockSeguridad();
-            if (articulo.getStock() <= stockSeguridad) {
+            if (articulo.getStock() < stockSeguridad) {
                 DTOArticuloListado dto = crearDtoListado(articulo);
-                productosFaltantes.add(dto);
+                DTOArticuloFaltante dtoEntrega = new DTOArticuloFaltante(
+                        dto.getId(), dto.getNombre(), dto.getStock(),
+                        stockSeguridad, dto.getModeloInventario(), dto.getFechaProximoPedido(),
+                        dto.getRestanteProximoPedido(), dto.getProveedorPredeterminadoId(), dto.getProveedorPredeterminadoNombre()
+                );
+                productosFaltantes.add(dtoEntrega);
             }
         }
         return productosFaltantes;

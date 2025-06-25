@@ -10,9 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
-import java.util.List;
-import java.util.Optional;
 
 @RestController
 @CrossOrigin(origins = "*")
@@ -145,7 +142,7 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
     @GetMapping("/listarProductosFaltantes")
     public ResponseEntity<?> listarProductosFaltantes() {
         try {
-            List<DTOArticuloListado> productos = servicio.listarProductosFaltantes();
+            List<DTOArticuloFaltante> productos = servicio.listarProductosFaltantes();
             return ResponseEntity.status(HttpStatus.OK).body(productos);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\": \"" + e.getMessage() + "\"}");
