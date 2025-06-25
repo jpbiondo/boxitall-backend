@@ -769,25 +769,26 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             for (Articulo articulo : articulos) {
                 Proveedor provPred = articulo.getProvPred();
                 for (ArticuloProveedor ap : articulo.getArtProveedores()) {
-                    if (ap.getProveedor().getId().equals(idProveedor)) {
-                        boolean esPredeterminado = provPred.getId().equals(idProveedor);
-
-                        DTOArticuloProveedorListado dto = new DTOArticuloProveedorListado(
-                                articulo.getId(),
-                                articulo.getNombre(),
-                                ap.getPrecioUnitario(),
-                                esPredeterminado,
-                                articulo.getModeloInventario().getLoteOptimo()
-                        );
-
-                        articulosDelProveedor.add(dto);
+                    boolean esPredeterminado = false;
+                    if (provPred != null && ap.getProveedor().getId().equals(idProveedor)) {
+                        esPredeterminado = provPred.getId().equals(idProveedor);
                     }
+                    DTOArticuloProveedorListado dto = new DTOArticuloProveedorListado(
+                            articulo.getId(),
+                            articulo.getNombre(),
+                            ap.getPrecioUnitario(),
+                            esPredeterminado,
+                            articulo.getModeloInventario().getLoteOptimo()
+                    );
+
+                    articulosDelProveedor.add(dto);
                 }
             }
 
             return articulosDelProveedor;
 
         } catch (Exception e) {
+            e.printStackTrace();
             throw new RuntimeException("Error al listar artículos del proveedor: " + e.getMessage(), e);
         }
     }
