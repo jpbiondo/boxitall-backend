@@ -31,13 +31,9 @@ public class DTOArticuloDetalle {
     private String proveedorPredeterminadoNombre;
 
     //CGI
-    private float cgiCostoPedido;
-    private float cgiCostoAlmacenamiento;
-    private float cgiCostoCompra;
-    private float cgiTotal;
-    private float cgiUnidades;
+    private DTOCGI cgi;
 
+    // Todos los demás proveedores
     private List<DTOArticuloProveedor> articuloProveedores;
-    // TODO - Listado proveedores?
 }
 
