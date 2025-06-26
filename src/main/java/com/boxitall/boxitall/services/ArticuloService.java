@@ -60,7 +60,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             update(savedArticulo.getId(), savedArticulo);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
@@ -766,7 +766,8 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
                     .orElseThrow(() -> new RuntimeException("Proveedor no encontrado."));
 
             List<Articulo> articulos = articuloRepository.findArticulosActivosbyProveedor(proveedor);
-            for (Articulo articulo : articulos) {
+
+            loopArts: for (Articulo articulo : articulos) {
                 Proveedor provPred = articulo.getProvPred();
                 for (ArticuloProveedor ap : articulo.getArtProveedores()) {
                     boolean esPredeterminado = false;
@@ -780,8 +781,8 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
                             esPredeterminado,
                             articulo.getModeloInventario().getLoteOptimo()
                     );
-
                     articulosDelProveedor.add(dto);
+                    continue loopArts;
                 }
             }
 

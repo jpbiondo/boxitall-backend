@@ -15,5 +15,5 @@ public class DTOArticuloProveedorListado {
     private String nombreArticulo;
     private float precioProveedor;
     private boolean esProveedorPredeterminado;
-    private float loteoptimo ;
+    private float loteOptimo ;
 }
