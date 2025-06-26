@@ -2,14 +2,14 @@ package com.boxitall.boxitall.services;
 
 
 import com.boxitall.boxitall.dtos.articulo.DTOArticuloAddProveedor;
-import com.boxitall.boxitall.dtos.articulo.DTOArticuloListado;
-import com.boxitall.boxitall.dtos.articulo.DTOArticuloProveedor;
 import com.boxitall.boxitall.dtos.proveedor.DTOAltaProveedor;
 import com.boxitall.boxitall.dtos.proveedor.DTOProveedor;
 import com.boxitall.boxitall.entities.Articulo;
 import com.boxitall.boxitall.entities.ArticuloProveedor;
 import com.boxitall.boxitall.entities.OrdenCompra;
 import com.boxitall.boxitall.entities.Proveedor;
+import com.boxitall.boxitall.mappers.ArticuloMapper;
+import com.boxitall.boxitall.mappers.ProveedorMapper;
 import com.boxitall.boxitall.repositories.ArticuloProveedorRepository;
 import com.boxitall.boxitall.repositories.ArticuloRepository;
 import com.boxitall.boxitall.repositories.OrdenCompraRepository;
@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,53 +41,47 @@ public class ProveedorService extends BaseEntityServiceImpl<Proveedor, Long> {
     @Autowired
     private ArticuloProveedorRepository articuloProveedorRepository;
 
-    @Transactional
+    @Autowired
+    private ProveedorMapper proveedorMapper;
 
+    @Autowired
+    private ArticuloMapper articuloMapper;
+
+    @Transactional
     public Proveedor altaProveedor(DTOAltaProveedor dtoAltaProveedor) throws Exception {
         try {
-            DTOProveedor dtoProveedor = dtoAltaProveedor.getDtoProveedor();
-            DTOArticuloAddProveedor dtoArticuloProveedor = dtoAltaProveedor.getDtoArticuloAddProveedor();
+            Proveedor proveedor = new Proveedor();
+            proveedor.setProveedorNombre(dtoAltaProveedor.getNombre());
+            proveedor.setProveedorTelefono(dtoAltaProveedor.getTelefono());
+            proveedor.setProveedorFechaBaja(null);
 
-            if (proveedorRepository.existsByProveedorCod((dtoProveedor.getProveedorCod()))){
-                throw new Exception("El proveedor con codigo " + dtoProveedor.getProveedorCod() + " ya está registrado.");
+            if(dtoAltaProveedor.getProveedorArticulos().isEmpty()) {
+                throw new Exception("El Proveedor debe proveer por lo menos un artículo para ser dado de alta");
             }
-            // Crear un nuevo proveedor
-            Proveedor proveedor = new Proveedor(
-                    dtoProveedor.getProveedorCod(),
-                    dtoProveedor.getProveedorNombre(),
-                    dtoProveedor.getProveedorTelefono(),
-                    dtoProveedor.getProveedorFechaBaja()
-            );
 
-            Proveedor savedProveedor = proveedorRepository.save(proveedor);
-            // Asegurarse de que el proveedor esté asociado a al menos un artículo
-            dtoArticuloProveedor.setProveedorId(savedProveedor.getId());
-            articuloService.addProveedor(dtoArticuloProveedor);
-            return savedProveedor;
+            proveedor = proveedorRepository.save(proveedor); // to get the id
+
+            List<DTOArticuloAddProveedor> proveedorArticulos = dtoAltaProveedor.getProveedorArticulos();
+            addArticulos(proveedorArticulos, proveedor);
+
+            return proveedor;
         }
         catch(Exception e){
             throw new Exception("Error al dar de alta el proveedor: " + e.getMessage(), e);
         }
-
-
     }
+
     @Transactional
     public List<DTOProveedor> listAll(){
         try{
-            List<Proveedor> proveedores = proveedorRepository.findAll(); //Encuentra todos los artículos
-            List<DTOProveedor> dtos = new ArrayList<>(); //Crea el array de respuesta
-            for (Proveedor proveedor : proveedores) {
-                DTOProveedor dto = new DTOProveedor(
-                        proveedor.getId(),
-                        proveedor.getProveedorCod(),
-                        proveedor.getProveedorNombre(),
-                        proveedor.getProveedorTelefono(),
-                        proveedor.getProveedorFechaBaja()
-                );
-                dtos.add(dto);
-            }
+            List<Proveedor> proveedores = proveedorRepository.findAll();
 
-            return dtos;
+            return proveedorMapper.proveedoresToDto(
+                    proveedores.stream()
+                            .filter(
+                                    (proveedor ->
+                                            proveedor.getProveedorFechaBaja() == null))
+                            .toList());
         }
         catch (Exception e) {
             throw new RuntimeException(e);
@@ -126,6 +119,44 @@ public class ProveedorService extends BaseEntityServiceImpl<Proveedor, Long> {
         }catch (Exception e){
             throw new Exception(e.getMessage());
         }
+    }
+
+    @Transactional
+    public void addArticulos(List<DTOArticuloAddProveedor> proveedorArticulos, Proveedor proveedor) {
+        try {
+            if (proveedorArticulos.isEmpty()) {
+                throw new Exception("La lista de articulos proveedores no puede estar vacía");
+            }
+
+
+            for (DTOArticuloAddProveedor articuloProveedor: proveedorArticulos) {
+                // Validación del artículo
+                Articulo articulo = articuloService.encontrarArticulo(articuloProveedor.getArticuloId());
+                articuloService.checkBaja(articulo);
+                if (proveedorYaProveeArticulo(articulo.getArtProveedores(), proveedor)) {
+                    throw new Exception("El proveedor ya existe para este artículo");
+                }
+
+                // Preparación del articuloProveedor
+                ArticuloProveedor artProv = articuloMapper.dtoAltaProvArtToArtProv(articuloProveedor);
+                artProv.setProveedor(proveedor);
+                System.out.println(artProv.toString());
+                articulo.getArtProveedores().add(artProv);
+
+                articuloService.update(articulo.getId(), articulo);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private boolean proveedorYaProveeArticulo(List<ArticuloProveedor> articuloProveedores, Proveedor proveedor) {
+        List<ArticuloProveedor> artsDelProv = articuloProveedores.stream().filter(
+                (artProv) ->
+                        artProv.getProveedor().getId()
+                                .equals(proveedor.getId())).toList();
+
+        return !artsDelProv.isEmpty();
     }
 
 }

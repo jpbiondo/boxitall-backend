@@ -1,12 +1,15 @@
 package com.boxitall.boxitall.controllers;
 
 import com.boxitall.boxitall.dtos.venta.DTOVentaAlta;
+import com.boxitall.boxitall.dtos.venta.DTOVentaShort;
 import com.boxitall.boxitall.entities.Venta;
 import com.boxitall.boxitall.services.VentaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @CrossOrigin(origins = "*")

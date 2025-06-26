@@ -4,6 +4,7 @@ import com.boxitall.boxitall.dtos.articulo.*;
 import com.boxitall.boxitall.dtos.proveedor.DTOProveedor;
 import com.boxitall.boxitall.dtos.articulo.*;
 import com.boxitall.boxitall.entities.*;
+import com.boxitall.boxitall.mappers.ArticuloMapper;
 import com.boxitall.boxitall.repositories.ArticuloRepository;
 import com.boxitall.boxitall.repositories.OrdenCompraRepository;
 import com.boxitall.boxitall.repositories.ProveedorRepository;
@@ -28,6 +29,9 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
     @Autowired
     private OrdenCompraRepository ordenCompraRepository;
+
+    @Autowired
+    private ArticuloMapper articuloMapper;
 
     @Transactional
     public void altaArticulo(DTOArticuloAlta dto) {
@@ -398,14 +402,14 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     }
 
     // Encuentra un artículo que puede o no estar
-    private Articulo encontrarArticulo(Long idArt) throws Exception {
+    public Articulo encontrarArticulo(Long idArt) throws Exception {
         Optional<Articulo> optArticulo = articuloRepository.findById(idArt);
         if (optArticulo.isEmpty()) throw new Exception("No se encuentra el artículo");
         return optArticulo.get();
     }
 
     // Encuentra un proveedor que puede o no estar
-    private Proveedor encontrarProveedor(Long idProv) throws Exception {
+    public Proveedor encontrarProveedor(Long idProv) throws Exception {
         Optional<Proveedor> optProveedor = proveedorRepository.findById(idProv);
         if (optProveedor.isEmpty()) throw new Exception("No se encuentra el proveedor");
         return optProveedor.get();
@@ -707,7 +711,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     //Falta calculo de intervalo Fijo
 
     // Chequea que el artíuclo no esté de baja. En caso de estarlo, error
-    private void checkBaja(Articulo articulo) throws RuntimeException {
+    public void checkBaja(Articulo articulo) throws RuntimeException {
         if (articulo.getFechaBaja() != null)
             throw new RuntimeException("El artículo está dado de baja");
     }

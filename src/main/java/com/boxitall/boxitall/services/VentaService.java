@@ -5,7 +5,9 @@ import com.boxitall.boxitall.dtos.ordencompra.DTOOrdenCompraArticuloAlta;
 import com.boxitall.boxitall.dtos.venta.DTOVenta;
 import com.boxitall.boxitall.dtos.venta.DTOVentaAlta;
 import com.boxitall.boxitall.dtos.venta.DTOVentaDetalle;
+import com.boxitall.boxitall.dtos.venta.DTOVentaShort;
 import com.boxitall.boxitall.entities.*;
+import com.boxitall.boxitall.mappers.VentaMapper;
 import com.boxitall.boxitall.repositories.OrdenCompraRepository;
 import com.boxitall.boxitall.repositories.VentaRepository;
 import jakarta.transaction.Transactional;
@@ -26,20 +28,28 @@ public class VentaService extends BaseEntityServiceImpl<Venta, Long> {
     OrdenCompraService ocService;
     @Autowired
     OrdenCompraRepository ordenCompraRepository;
+    @Autowired
+    VentaMapper ventaMapper;
 
     @Transactional
     public void altaVenta(DTOVentaAlta dto){
         try{
-            List<VentaDetalle> detalles = new ArrayList<>();
-            int renglon = 0; // Contador para los renglones
-            for (Long articuloId : dto.getId_cantidad().keySet()){
+            Venta venta = ventaMapper.dtoVentaAltaToVenta(dto);
 
-                float cantCompra = dto.getId_cantidad().get(articuloId); // Cantidad a comprar
-                Articulo articulo = articuloService.findById(articuloId);
+            Articulo articulo = null;
+            float cantCompra = 0;
+            for (VentaDetalle detalle: venta.getDetalle())
+            {
+                articulo = detalle.getArticulo();
+                cantCompra = detalle.getCantidad();
+
+                if (articulo == null) {
+                    throw new RuntimeException("El artículo no puede ser nulo");
+                }
 
                 //Verificamos que el artículo sea comprable (no de baja y con proveedor predeterminado)
                 if (articulo.getProvPred() == null) throw new RuntimeException("El artículo no está listo para ser vendido al no tener proveedor predeterminado");
-                if (articulo.getFechaBaja() == null) throw new RuntimeException("El artíuclo está dado de baja y no puede ser vendido");
+                if (articulo.getFechaBaja() != null) throw new RuntimeException("El artíuclo está dado de baja y no puede ser vendido");
 
                 // Verificamos los imposibles
                 if (cantCompra <= 0) throw new RuntimeException("No se pueden comprar cantidades negativas o iguales a cero");
@@ -63,22 +73,15 @@ public class VentaService extends BaseEntityServiceImpl<Venta, Long> {
                 if (modeloNombre.equals("LoteFijo") && provPredId > 0 && !existeOCEnCurso){
                     ArticuloModeloLoteFijo modeloFijo = (ArticuloModeloLoteFijo) modeloInventario;
                     if ((stockActual - cantCompra) < modeloFijo.getPuntoPedido()){
-                        DTOOrdenCompraArticuloAlta dtoOCA = new DTOOrdenCompraArticuloAlta(modeloFijo.getLoteOptimo(), articuloId);
+                        DTOOrdenCompraArticuloAlta dtoOCA = new DTOOrdenCompraArticuloAlta(modeloFijo.getLoteOptimo(), articulo.getId());
                         DTOOrdenCompraAlta dtoOC = new DTOOrdenCompraAlta(new ArrayList<>(), provPredId);
                         dtoOC.getDetallesarticulo().add(dtoOCA);
                         ocService.altaOrdenCompra(dtoOC);
                     }
                 }
-
-                VentaDetalle detalle = new VentaDetalle(cantCompra, renglon, articulo);
-                detalles.add(detalle);
-                renglon++;
             }
             // Verificamos que la venta tenga al menos un detalle (al menos 1 artículo elegido)
-            if (renglon == 0) throw new RuntimeException("No hay artículos seleccionados");
-
-            Venta venta = new Venta(LocalDateTime.now(), detalles);
-
+            if (venta.getDetalle().isEmpty()) throw new RuntimeException("No hay artículos seleccionados");
             repository.save(venta);
 
         } catch (Exception e) {
@@ -91,36 +94,21 @@ public class VentaService extends BaseEntityServiceImpl<Venta, Long> {
     public DTOVenta getOne(Long id) throws Exception {
         try {
             Optional<Venta> venta = baseEntityRepository.findById(id);
+
             if (venta.isEmpty()) throw new RuntimeException("No se encuentra venta con ese id");
-            DTOVenta dto = new DTOVenta(venta.get().getId(),venta.get().getFechaVenta(), new ArrayList<>());
-            for (VentaDetalle detalle : venta.get().getDetalle()){
-                DTOVentaDetalle dtoDetalle = new DTOVentaDetalle(detalle.getId(),detalle.getCantidad(),detalle.getRenglon(),detalle.getArticulo().getId(),detalle.getArticulo().getNombre());
-                dto.getDetalles().add(dtoDetalle);
-            }
-            return dto;
+
+            return ventaMapper.ventaToDTOVenta(venta.get());
+
         } catch (Exception e) {
             throw new Exception(e.getMessage());
         }
     }
 
     @Transactional
-    public List<DTOVenta> getAll() throws Exception{
-        try{
+    public List<DTOVentaShort> getAll() throws Exception{
+        try {
             List<Venta> ventas = repository.findAll();
-            List<DTOVenta> dtoRetorno = new ArrayList<>();
-
-            //Por cada venta encontrada
-            for (Venta venta : ventas){
-                //Un dto de venta
-                DTOVenta dto = new DTOVenta(venta.getId(),venta.getFechaVenta(), new ArrayList<>());
-                //Un DTODetalle por cada renglón de la venta
-                for (VentaDetalle detalle : venta.getDetalle()){
-                    DTOVentaDetalle dtoDetalle = new DTOVentaDetalle(detalle.getId(),detalle.getCantidad(),detalle.getRenglon(),detalle.getArticulo().getId(),detalle.getArticulo().getNombre());
-                    dto.getDetalles().add(dtoDetalle);
-                }
-                dtoRetorno.add(dto);
-            }
-            return dtoRetorno;
+            return ventaMapper.ventaToDTOsVentaShort(ventas);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
