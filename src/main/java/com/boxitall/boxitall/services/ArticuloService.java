@@ -64,7 +64,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             update(savedArticulo.getId(), savedArticulo);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
@@ -87,7 +87,6 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             articulo.setArtProveedores(foundArt.getArtProveedores());
             articulo.setProvPred(foundArt.getProvPred());
 
-            // TODO - Checkear que no saque al pred ni uno con OC?
             // Agrega / cambia todos los artProv según lo que llegó en el dto
             loopDTOs: for (DTOArticuloAddProveedor dtoArtProv : dto.getArticuloProveedores()){
                 for (ArticuloProveedor artProv : articulo.getArtProveedores()){
@@ -770,28 +769,30 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
                     .orElseThrow(() -> new RuntimeException("Proveedor no encontrado."));
 
             List<Articulo> articulos = articuloRepository.findArticulosActivosbyProveedor(proveedor);
-            for (Articulo articulo : articulos) {
+
+            loopArts: for (Articulo articulo : articulos) {
                 Proveedor provPred = articulo.getProvPred();
                 for (ArticuloProveedor ap : articulo.getArtProveedores()) {
-                    if (ap.getProveedor().getId().equals(idProveedor)) {
-                        boolean esPredeterminado = provPred.getId().equals(idProveedor);
-
-                        DTOArticuloProveedorListado dto = new DTOArticuloProveedorListado(
-                                articulo.getId(),
-                                articulo.getNombre(),
-                                ap.getPrecioUnitario(),
-                                esPredeterminado,
-                                articulo.getModeloInventario().getLoteOptimo()
-                        );
-
-                        articulosDelProveedor.add(dto);
+                    boolean esPredeterminado = false;
+                    if (provPred != null && ap.getProveedor().getId().equals(idProveedor)) {
+                        esPredeterminado = provPred.getId().equals(idProveedor);
                     }
+                    DTOArticuloProveedorListado dto = new DTOArticuloProveedorListado(
+                            articulo.getId(),
+                            articulo.getNombre(),
+                            ap.getPrecioUnitario(),
+                            esPredeterminado,
+                            articulo.getModeloInventario().getLoteOptimo()
+                    );
+                    articulosDelProveedor.add(dto);
+                    continue loopArts;
                 }
             }
 
             return articulosDelProveedor;
 
         } catch (Exception e) {
+            e.printStackTrace();
             throw new RuntimeException("Error al listar artículos del proveedor: " + e.getMessage(), e);
         }
     }
