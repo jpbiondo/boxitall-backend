@@ -87,7 +87,6 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             articulo.setArtProveedores(foundArt.getArtProveedores());
             articulo.setProvPred(foundArt.getProvPred());
 
-            // TODO - Checkear que no saque al pred ni uno con OC?
             // Agrega / cambia todos los artProv según lo que llegó en el dto
             loopDTOs: for (DTOArticuloAddProveedor dtoArtProv : dto.getArticuloProveedores()){
                 for (ArticuloProveedor artProv : articulo.getArtProveedores()){
