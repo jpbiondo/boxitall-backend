@@ -8,5 +8,5 @@ import java.util.Map;
 @AllArgsConstructor
 @Getter
 public class DTOVentaAlta {
-    private Map<Long, Float> id_cantidad;
+    private Map<Long, Float> articuloIdCantidad;
 }
