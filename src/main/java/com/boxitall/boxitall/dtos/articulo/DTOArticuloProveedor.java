@@ -16,6 +16,6 @@ public class DTOArticuloProveedor {
     private float costoPedido;
     private int demoraEntrega;
     private float precioUnitario;
-    private float puntoPedido; // TODO - Repetido en el modelo de inventario, dejar ambos?
+    private float puntoPedido;
     private DTOProveedor proveedor;
 }

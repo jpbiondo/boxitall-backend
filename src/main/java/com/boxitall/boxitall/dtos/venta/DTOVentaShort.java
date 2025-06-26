@@ -6,15 +6,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
-public class DTOVenta {
+@AllArgsConstructor
+public class DTOVentaShort {
     private Long id;
     private LocalDateTime fechaVenta;
-    private List<DTOVentaDetalle> detalle = new ArrayList<>();
 }

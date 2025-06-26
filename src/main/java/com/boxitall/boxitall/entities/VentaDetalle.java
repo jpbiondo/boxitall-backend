@@ -19,6 +19,6 @@ public class VentaDetalle extends BaseEntity{
     private int renglon;
 
     //Relaciones
-    @ManyToOne (optional = false, cascade = CascadeType.REFRESH)
+    @ManyToOne (optional = false, cascade = CascadeType.MERGE)
     private Articulo articulo;
 }
