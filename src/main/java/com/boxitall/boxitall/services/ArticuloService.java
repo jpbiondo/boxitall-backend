@@ -352,6 +352,9 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
             checkBaja(articulo);
 
+            // No permitir dar de baja si es el prov predeterminado
+            if (articulo.getProvPred() == proveedor) throw new RuntimeException("No puede eliminarse el proveedor al ser el proveedor predeterminado, cámbialo antes");
+
             // Encontrar el artículoProveedor de ese proveedor
             ArticuloProveedor articuloProveedor = null;
             for (ArticuloProveedor artProv : articulo.getArtProveedores()) {
@@ -360,6 +363,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
                     break;
                 }
             }
+
             if (articuloProveedor == null) throw new RuntimeException("El proveedor ingresado no provee este artículo");
 
             articulo.getArtProveedores().remove(articuloProveedor);
