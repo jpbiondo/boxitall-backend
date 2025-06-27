@@ -44,7 +44,7 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
             OrdenCompraEstadoOC estadoactual = new OrdenCompraEstadoOC();
             estadoactual.setEstado(estadopendiente);
             estadoactual.setFechaInicio(new Date());
-            ordenCompraEstadoOCRepository.save(estadoactual);
+
 
             orden.setFechaInicio(LocalDateTime.now());
             orden.setProveedor(proveedor);
@@ -92,7 +92,6 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
             }
             // se cierra el estado actual
             estadoActual.setFechaFin(new Date());
-            ordenCompraEstadoOCRepository.save(estadoActual);
 
             EstadoOrdenCompra estadoCancelada = estadoOrdenCompraRepository.findByNombre("CANCELADA")
                     .orElseThrow(() -> new RuntimeException("No se encontró el estado CANCELADA."));
@@ -116,20 +115,30 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
         try {
             OrdenCompra orden = ordenCompraRepository.findById(idOrden)
                     .orElseThrow(() -> new RuntimeException("Orden de compra no encontrada."));
+
             OrdenCompraEstadoOC estadoActual = orden.getEstadoActual(orden);
             OrdenCompraArticulo detalle = ordenCompraArticuloRepository.findById(idDetalle)
                     .orElseThrow(() -> new RuntimeException("Detalle no encontrado."));
-            // verfica si se puede eliminar
+
             String estadoActualNombre = estadoActual.getEstado().getNombre();
             if (!"PENDIENTE".equals(estadoActualNombre)) {
                 throw new RuntimeException("Solo se pueden modificar órdenes en estado PENDIENTE.");
             }
+
+            // Eliminar el detalle
             orden.getDetalles().remove(detalle);
-            ordenCompraRepository.save(orden);
+
+            // Si no quedan más detalles, eliminar la orden completa
+            if (orden.getDetalles().size() == 0) {
+                ordenCompraRepository.delete(orden);
+            } else {
+                ordenCompraRepository.save(orden);
+            }
         } catch (Exception e) {
-            throw new RuntimeException("Error eliminar el detalle de la orden de compra: " + e.getMessage(), e);
+            throw new RuntimeException("Error al eliminar el detalle de la orden de compra: " + e.getMessage(), e);
         }
     }
+
     @Transactional
     public void actualizarCantidadDetalle(Long idOrden, Long idDetalle, Integer nuevaCantidad) {
         try{
