@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -22,5 +23,11 @@ public interface ArticuloRepository extends BaseEntityRepository<Articulo, Long>
             "WHERE ap.proveedor = :proveedor AND a.fechaBaja IS NULL")
     List<Articulo> findArticulosActivosbyProveedor(@Param("proveedor") Proveedor proveedor);
 
+    @Query("SELECT DISTINCT a FROM Articulo a " +
+            "WHERE TYPE(a.modeloInventario) = ArticuloModeloIntervaloFijo " +
+            "AND FUNCTION('DATE', a.modeloInventario.fechaProximoPedido) <= :todayDate " +
+            "AND a.fechaBaja IS NULL"
+        )
+    List<Articulo> findByFaltoStockIntervaloFijo(@Param("todayDate") LocalDate todayDate);
 
 }

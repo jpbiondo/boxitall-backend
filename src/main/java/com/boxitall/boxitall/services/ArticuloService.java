@@ -15,6 +15,7 @@ import org.apache.commons.math3.distribution.NormalDistribution;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -370,6 +371,12 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             throw new RuntimeException(e);
         }
     }
+
+    @Transactional
+    public List<Articulo> getArticulosFaltoStockIF(LocalDate localDate) {
+        return articuloRepository.findByFaltoStockIntervaloFijo(localDate);
+    }
+
     // -------- Funciones auxiliares
 
     // Parte común entre el alta y el update de artículo. Info del artículo y el modelo de inventario
@@ -707,7 +714,44 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
     }
 
-    //Falta calculo de intervalo Fijo
+    public int calcularCantPedidoIF(Articulo articulo) throws Exception{
+
+        if (!(articulo.getModeloInventario() instanceof ArticuloModeloIntervaloFijo)) {
+            throw new Exception("El modelo de inventario del artículo debe ser de intervalo fijo");
+        }
+
+        ArticuloModeloIntervaloFijo modeloInventarioIF = (ArticuloModeloIntervaloFijo) articulo.getModeloInventario();
+
+        ArticuloProveedor articuloProvPred = obtenerArticuloProveedor(articulo, articulo.getProvPred());
+
+        if (articuloProvPred == null) {
+            throw new Exception("El proveedor predeterminado debe estar registrado como proveedor del artículo");
+        }
+
+        float demanda = articulo.getDemanda();
+        float stockSeguridad = articulo.getStock();
+        float demoraEntrega = articuloProvPred.getDemoraEntrega();
+        float periodoIF = modeloInventarioIF.getIntervaloPedido();
+        float stock = articulo.getStock();
+
+        int cantidadPedido = (int) Math.floor(demanda*(periodoIF + demoraEntrega) + stockSeguridad - stock);
+
+        return (int) Math.max(cantidadPedido, modeloInventarioIF.getInventarioMaximo() - stock);
+
+    }
+
+
+    private ArticuloProveedor obtenerArticuloProveedor(Articulo articulo, Proveedor proveedor) {
+        List<ArticuloProveedor> articuloProveedores = articulo.getArtProveedores();
+
+        for(ArticuloProveedor articuloProveedor: articuloProveedores) {
+            if (articuloProveedor.getProveedor().getId().equals(proveedor.getId())) {
+                return articuloProveedor;
+            }
+        }
+
+        return null;
+    }
 
     // Chequea que el artíuclo no esté de baja. En caso de estarlo, error
     public void checkBaja(Articulo articulo) throws RuntimeException {

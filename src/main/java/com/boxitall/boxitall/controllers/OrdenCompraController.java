@@ -42,10 +42,10 @@ public class OrdenCompraController extends BaseEntityControllerImpl<OrdenCompra,
                 ));
     }
 
-   @PutMapping("/{idOrden}/detalle/cancelar-orden")
-    public ResponseEntity<?> cancelarOrden(@PathVariable Long id) {
+   @DeleteMapping("/{idOrden}/detalle/cancelar-orden")
+    public ResponseEntity<?> cancelarOrden(@PathVariable Long idOrden) {
         try {
-            service.cancelarOrdenCompra(id);
+            service.cancelarOrdenCompra(idOrden);
             return ResponseEntity.ok("Orden de compra cancelada correctamente.");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
