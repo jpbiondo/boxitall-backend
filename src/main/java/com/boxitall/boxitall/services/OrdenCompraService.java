@@ -44,7 +44,7 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
             OrdenCompraEstadoOC estadoactual = new OrdenCompraEstadoOC();
             estadoactual.setEstado(estadopendiente);
             estadoactual.setFechaInicio(new Date());
-            ordenCompraEstadoOCRepository.save(estadoactual);
+
 
             orden.setFechaInicio(LocalDateTime.now());
             orden.setProveedor(proveedor);
@@ -92,7 +92,6 @@ public class OrdenCompraService extends BaseEntityServiceImpl<OrdenCompra, Long>
             }
             // se cierra el estado actual
             estadoActual.setFechaFin(new Date());
-            ordenCompraEstadoOCRepository.save(estadoActual);
 
             EstadoOrdenCompra estadoCancelada = estadoOrdenCompraRepository.findByNombre("CANCELADA")
                     .orElseThrow(() -> new RuntimeException("No se encontró el estado CANCELADA."));
