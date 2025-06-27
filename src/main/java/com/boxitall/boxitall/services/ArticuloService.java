@@ -101,7 +101,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
                 }
                 // No había artProv para ese dto, se agrega un artProv
                 dtoArtProv.setArticuloId(articulo.getId());
-                articulo = addProveedor(dtoArtProv);
+                articulo = addProveedorToArt(dtoArtProv, articulo);
             }
 
             List<ArticuloProveedor> newArtProvs = new ArrayList<>(articulo.getArtProveedores());
@@ -110,6 +110,9 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             loopExistentes: for (ArticuloProveedor artProv : articulo.getArtProveedores()){
                 for (DTOArticuloAddProveedor dtoArtProv : dto.getArticuloProveedores()){
                     if (artProv.getProveedor().getId() == dtoArtProv.getProveedorId()){
+                        //Ponemos al nuevo proveedor predeterminado
+                        if (dtoArtProv.getProveedorId() == dto.getProveedorPredeterminadoId())
+                            articulo.setProvPred(artProv.getProveedor());
                         continue loopExistentes;
                     }
                 }
@@ -246,6 +249,44 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         try {
             //Encontrar el Artículo
             Articulo articulo = encontrarArticulo(dto.getArticuloId());
+            //Encontrar el Proveedor
+            Proveedor proveedor = encontrarProveedor(dto.getProveedorId());
+
+            // Checkear que el artículo no esté dado de baja
+            checkBaja(articulo);
+
+            //checkear que no esté ya agregado el proveedor
+            List<ArticuloProveedor> artProvs = articulo.getArtProveedores();
+            if (artProvs != null) {
+                for (ArticuloProveedor artProv : artProvs) {
+                    if (artProv.getProveedor() == proveedor) {
+                        throw new Exception("El proveedor ya existe para este artículo");
+                    }
+                }
+            } else
+                artProvs = new ArrayList<>();      // Está por un warning que tiraba, pero andaba igual con o sin esta línea
+
+            // Agregar ArtículoProveedor y setear todos sus datos
+            ArticuloProveedor artProv = new ArticuloProveedor();
+
+            artProv.setCostoCompra(dto.getCostoCompra());
+            artProv.setCargoPedido(dto.getCargoPedido());
+            artProv.setCostoPedido(dto.getCostoPedido());
+            artProv.setDemoraEntrega(dto.getDemoraEntrega());
+            artProv.setPrecioUnitario(dto.getPrecioUnitario());
+            artProv.setProveedor(proveedor);
+            artProvs.add(artProv);
+            articulo.setArtProveedores(artProvs);
+
+            // Guardar cambios
+            return update(dto.getArticuloId(), articulo);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Articulo addProveedorToArt(DTOArticuloAddProveedor dto, Articulo articulo) {
+        try {
             //Encontrar el Proveedor
             Proveedor proveedor = encontrarProveedor(dto.getProveedorId());
 
