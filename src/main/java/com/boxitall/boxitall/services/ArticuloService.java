@@ -113,7 +113,8 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
                     if (artProv.getProveedor().getId() == dtoArtProv.getProveedorId()){
                         //Ponemos al nuevo proveedor predeterminado
                         if (dtoArtProv.getProveedorId() == dto.getProveedorPredeterminadoId())
-                            articulo.setProvPred(artProv.getProveedor());
+                            setProveedorPred(dto.getProveedorPredeterminadoId(), articulo.getId());
+
                         continue loopExistentes;
                     }
                 }
@@ -346,8 +347,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             if (!provee)
                 throw new Exception("El proveedor ingresado no provee este artículo");
 
-            if (articulo.getProvPred() == proveedor)
-                return articulo;
+
             //Settear proveedor
             articulo.setProvPred(proveedor);
 
@@ -559,7 +559,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
     private Optional<ArticuloProveedor> obtenerArticuloProveedorPredeterminado(Articulo articulo) {
         Proveedor proveedorPredeterminado = articulo.getProvPred();
-
+        System.out.println(proveedorPredeterminado.toString());
         if (proveedorPredeterminado == null) {
             return Optional.empty();
         }
