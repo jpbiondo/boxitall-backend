@@ -724,7 +724,17 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     public DTOCGI calcularCGI(Articulo articulo) {
         try {
 
-            float loteOptimo = articulo.getModeloInventario().getLoteOptimo();
+            ArticuloModeloInventario modelo = articulo.getModeloInventario();
+            Optional<Integer> posLoteOptimo = calcularLoteOptimo(articulo);
+            int loteOptimo;
+            if (posLoteOptimo.isPresent())
+                loteOptimo = posLoteOptimo.get();
+            else
+                loteOptimo = 0;
+            calcularStockSeguridad(articulo);
+            if (modelo instanceof ArticuloModeloLoteFijo){
+                calcularPuntoPedido(articulo);
+            }
 
             Optional<ArticuloProveedor> articuloProveedorPred = obtenerArticuloProveedorPredeterminado(articulo);
 
@@ -741,7 +751,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             float demanda= articulo.getDemanda();
 
             float cgiCCompra = precio * loteOptimo;
-            float cgiCAalmacenamiento = costoAlmacenamiento * (loteOptimo / 2);
+            float cgiCAalmacenamiento = costoAlmacenamiento * ((float) loteOptimo / 2);
             float cgiCPedido = costoPedido * (demanda / loteOptimo);
             float cgiCTotal = cgiCCompra + cgiCAalmacenamiento + cgiCPedido;
 
