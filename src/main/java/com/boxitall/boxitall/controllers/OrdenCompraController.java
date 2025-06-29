@@ -42,7 +42,7 @@ public class OrdenCompraController extends BaseEntityControllerImpl<OrdenCompra,
                 ));
     }
 
-    @PutMapping("/{idOrden}/detalle/cancelar-orden")
+   @DeleteMapping("/{idOrden}/detalle/cancelar-orden")
     public ResponseEntity<?> cancelarOrden(@PathVariable Long idOrden) {
         try {
             service.cancelarOrdenCompra(idOrden);

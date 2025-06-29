@@ -2,7 +2,6 @@ package com.boxitall.boxitall.services;
 
 import com.boxitall.boxitall.dtos.articulo.*;
 import com.boxitall.boxitall.dtos.proveedor.DTOProveedor;
-import com.boxitall.boxitall.dtos.articulo.*;
 import com.boxitall.boxitall.entities.*;
 import com.boxitall.boxitall.mappers.ArticuloMapper;
 import com.boxitall.boxitall.repositories.ArticuloRepository;
@@ -15,6 +14,7 @@ import org.apache.commons.math3.distribution.NormalDistribution;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -319,6 +319,11 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         }
     }
 
+    @Transactional
+    public List<Articulo> getArticulosFaltoStockIF(LocalDate localDate) {
+        return articuloRepository.findByFaltoStockIntervaloFijo(localDate);
+    }
+
     // -------- Funciones auxiliares
 
     // Parte común entre el alta y el update de artículo. Info del artículo, el modelo de inventario
@@ -566,8 +571,10 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             float desviacion = articulo.getDemandaDesviacionEstandar();
             float z = calcularZ(nivelServicio);
 
-            if (leadTime == 0 || z == 0 || desviacion == 0)
+            if (leadTime == 0 || z == 0 || desviacion == 0) {
+                articulo.getModeloInventario().setStockSeguridad(0);
                 return 0;
+            }
 
             int stockSeguridad;
 
@@ -583,6 +590,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
                 int intervaloPedido = modeloIntervaloFijo.getIntervaloPedido();
 
                 if (intervaloPedido == 0) {
+                    articulo.getModeloInventario().setStockSeguridad(0);
                     return 0; // Si intervaloPedido es cero, no calculamos el stock de seguridad
                 }
                 // Calcular Stock de Seguridad para Intervalo Fijo
@@ -643,6 +651,45 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         }
 
 
+    }
+
+    public int calcularCantPedidoIF(Articulo articulo) throws Exception{
+
+        if (!(articulo.getModeloInventario() instanceof ArticuloModeloIntervaloFijo)) {
+            throw new Exception("El modelo de inventario del artículo debe ser de intervalo fijo");
+        }
+
+        ArticuloModeloIntervaloFijo modeloInventarioIF = (ArticuloModeloIntervaloFijo) articulo.getModeloInventario();
+
+        ArticuloProveedor articuloProvPred = obtenerArticuloProveedor(articulo, articulo.getProvPred());
+
+        if (articuloProvPred == null) {
+            throw new Exception("El proveedor predeterminado debe estar registrado como proveedor del artículo");
+        }
+
+        float demanda = articulo.getDemanda();
+        float stockSeguridad = articulo.getStock();
+        float demoraEntrega = articuloProvPred.getDemoraEntrega();
+        float periodoIF = modeloInventarioIF.getIntervaloPedido();
+        float stock = articulo.getStock();
+
+        int cantidadPedido = (int) Math.floor(demanda*(periodoIF + demoraEntrega) + stockSeguridad - stock);
+
+        return (int) Math.max(cantidadPedido, modeloInventarioIF.getInventarioMaximo() - stock);
+
+    }
+
+
+    private ArticuloProveedor obtenerArticuloProveedor(Articulo articulo, Proveedor proveedor) {
+        List<ArticuloProveedor> articuloProveedores = articulo.getArtProveedores();
+
+        for(ArticuloProveedor articuloProveedor: articuloProveedores) {
+            if (articuloProveedor.getProveedor().getId().equals(proveedor.getId())) {
+                return articuloProveedor;
+            }
+        }
+
+        return null;
     }
 
     // Chequea que el artíuclo no esté de baja. En caso de estarlo, error
