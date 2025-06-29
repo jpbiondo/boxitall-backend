@@ -14,12 +14,12 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 public class ArticuloProveedor extends BaseEntity{
-    private float costoCompra;
-    private float cargoPedido;
+    private float costoCompra; // TODO - useless
+    private float cargoPedido; // TODO - useless
     private float costoPedido;
     private int demoraEntrega; //en días
     private float precioUnitario;
-    private float puntoPedido;
+    private float puntoPedido; // TODO - useless, se usa el del modelo
 
     private LocalDateTime fechaBaja;
 
