@@ -40,4 +40,4 @@ out/
 .env
 
 ### Connection ###
-src/main/resources/application.properties
+src/main/resources/
