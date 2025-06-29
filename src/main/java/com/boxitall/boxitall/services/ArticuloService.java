@@ -800,8 +800,9 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         for (Articulo articulo : articulos) {
             if (articulo.getFechaBaja() != null)
                 continue;
+            float stockSeguridad = articulo.getModeloInventario().getStockSeguridad();
             if (articulo.getModeloInventario() instanceof ArticuloModeloLoteFijo modelo) {
-                if (articulo.getStock() <= modelo.getPuntoPedido()) {
+                if (articulo.getStock() <= modelo.getPuntoPedido() && articulo.getStock() > stockSeguridad) {
                     List<OrdenCompra> ordenesActivas = ordenCompraRepository.findOrdenesActivasByArticulo(articulo);
                     if (ordenesActivas.isEmpty()) {
                         DTOArticuloListado dto = crearDtoListado(articulo);
