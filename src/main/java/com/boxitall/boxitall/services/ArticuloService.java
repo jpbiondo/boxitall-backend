@@ -387,7 +387,8 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         LocalDateTime fechaProximo = LocalDateTime.now();
 
         if (articulo.getModeloInventario() instanceof ArticuloModeloLoteFijo)
-            cantidadProximoPedido = articulo.getStock() - ((ArticuloModeloLoteFijo) articulo.getModeloInventario()).getPuntoPedido();
+            cantidadProximoPedido = Math.max(0, articulo.getStock() - ((ArticuloModeloLoteFijo) articulo.getModeloInventario()).getPuntoPedido());
+            //cantidadProximoPedido = articulo.getStock() - ((ArticuloModeloLoteFijo) articulo.getModeloInventario()).getPuntoPedido();
         else
             fechaProximo = ((DTOArticuloModeloIntervaloFijo)dtoModelo).getFechaProximoPedido();
 
