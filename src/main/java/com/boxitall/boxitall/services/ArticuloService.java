@@ -60,7 +60,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             articuloRepository.save(articulo);
 
         } catch (Exception e) {
-            //e.printStackTrace();
+            e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
@@ -273,7 +273,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
     public void setProveedorPred(Articulo articulo, Long idProveedor) {
         try {
 
-            if( idProveedor == 0){
+            if( idProveedor == null || idProveedor == 0) {
                 articulo.setProvPred(null);
 
                 // Intentar calcular el lote optimo
