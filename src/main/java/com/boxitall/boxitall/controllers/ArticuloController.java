@@ -68,36 +68,6 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
         }
     }
 
-    @PostMapping("/addProveedor")
-    public ResponseEntity<?> addProveedor(@RequestBody DTOArticuloAddProveedor dtoAddProveedor){
-        try{
-            servicio.addProveedor(dtoAddProveedor);
-            return ResponseEntity.status(HttpStatus.OK).body("{\" Proveedor añadido al artículo correctamente }\"");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\":\"" + e.getMessage() + "\"}");
-        }
-    }
-
-    @PostMapping("/addProveedorPredeterminado")
-    public ResponseEntity<?> addProveedorPredeterminado(@RequestParam Long prov, @RequestParam Long art) {
-        try {
-            servicio.setProveedorPred(prov, art);
-            return ResponseEntity.status(HttpStatus.OK).body("{\" Proveedor establecido como predeterminado de manera exitosa }\"");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\":\"" + e.getMessage() + "\"}");
-        }
-    }
-
-    @DeleteMapping("/quitarProveedor")
-    public ResponseEntity<?> quitarProveedor(@RequestParam Long proveedorId, @RequestParam Long articuloId){
-        try{
-            servicio.quitarProveedor(proveedorId,articuloId);
-            return ResponseEntity.status(HttpStatus.OK).body("{\" Proveedor quitado para el artículo ingresado }\"");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\":\"" + e.getMessage() + "\"}");
-        }
-    }
-
     @DeleteMapping("/bajaArticulo")
     public ResponseEntity<?> bajaArticulo(@RequestParam Long id){
         try{
@@ -107,6 +77,7 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\":\"" + e.getMessage() + "\"}");
         }
     }
+
     @GetMapping("/listarPorProveedor")
     public ResponseEntity<?> listarArticulosAgrupadosPorProveedor() {
         try {
@@ -116,6 +87,7 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\":\"" + e.getMessage() + "\"}");
         }
     }
+
     @GetMapping("/listarPorProveedorId")
     public ResponseEntity<?> listarArticulosPorProveedorId(@RequestParam Long idProveedor) {
         try {
@@ -136,6 +108,7 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\":\"" + e.getMessage() + "\"}");
         }
     }
+
     //Listado productos faltantes
     @GetMapping("/listarProductosFaltantes")
     public ResponseEntity<?> listarProductosFaltantes() {
@@ -146,6 +119,7 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\":\"" + e.getMessage() + "\"}");
         }
     }
+
     //Listado proveedores por articulo
     @GetMapping("/listarProveedoresPorArticulo")
     public ResponseEntity<?> listarProveedoresPorArticulo(@RequestParam Long articuloId) {
@@ -156,6 +130,7 @@ public class ArticuloController extends BaseEntityControllerImpl<Articulo, Artic
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("{\"error\":\"" + e.getMessage() + "\"}");
         }
     }
+
     //Ajuste de inventario
     @PutMapping("/ajustarInventario")
     public ResponseEntity<?> ajustarInventario(@RequestParam Long articuloId, @RequestParam float nuevaCantidad) {
