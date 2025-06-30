@@ -772,8 +772,8 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
                 Proveedor provPred = articulo.getProvPred();
                 for (ArticuloProveedor ap : articulo.getArtProveedores()) {
                     boolean esPredeterminado = false;
-                    if (provPred != null && ap.getProveedor().getId().equals(idProveedor)) {
-                        esPredeterminado = provPred.getId().equals(idProveedor);
+                    if (provPred != null) {
+                        esPredeterminado = provPred.getId() == idProveedor ;
                     }
                     DTOArticuloProveedorListado dto = new DTOArticuloProveedorListado(
                             articulo.getId(),
