@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.*;
 
 
@@ -61,7 +63,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
         } catch (Exception e) {
             e.printStackTrace();
-            throw new RuntimeException(e);
+            throw new RuntimeException(e.getMessage());
         }
     }
 
@@ -123,7 +125,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
         } catch (Exception e) {
             e.printStackTrace();
-            throw new RuntimeException(e);
+            throw new RuntimeException(e.getMessage());
         }
     }
 
@@ -159,7 +161,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             }
             return dtos;
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(e.getMessage());
         }
     }
 
@@ -180,7 +182,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
             articulo.setFechaBaja(LocalDateTime.now());
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(e.getMessage());
         }
     }
 
@@ -230,7 +232,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             );
             return dto;
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(e.getMessage());
         }
     }
 
@@ -266,7 +268,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             articulo.setArtProveedores(artProvs);
 
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(e.getMessage());
         }
     }
 
@@ -449,7 +451,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             dto = new DTOArticuloModeloIntervaloFijo(
                     ((ArticuloModeloIntervaloFijo) modeloInventario).getIntervaloPedido(),
                     ((ArticuloModeloIntervaloFijo) modeloInventario).getInventarioMaximo(),
-                    ((ArticuloModeloIntervaloFijo) modeloInventario).getFechaProximoPedido()
+                    ((ArticuloModeloIntervaloFijo) modeloInventario).getFechaProximoPedido().truncatedTo(ChronoUnit.MINUTES)
             );
             dto.setNombre("Intervalo Fijo");
             dto.setStockSeguridad(modeloInventario.getStockSeguridad());
