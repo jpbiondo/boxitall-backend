@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -50,6 +51,13 @@ public class ProveedorService extends BaseEntityServiceImpl<Proveedor, Long> {
     @Transactional
     public Proveedor altaProveedor(DTOAltaProveedor dtoAltaProveedor) throws Exception {
         try {
+            List<Proveedor> proveedores = proveedorRepository.findAll();
+
+            // Se fija que no exista otro con el mismo nombre
+            for (Proveedor proveedor : proveedores) {
+                if (Objects.equals(proveedor.getProveedorNombre(), dtoAltaProveedor.getNombre()) && proveedor.getProveedorFechaBaja() == null)
+                    throw new RuntimeException("Ya existe un proveedor con este nombre");
+            }
             Proveedor proveedor = new Proveedor();
             proveedor.setProveedorNombre(dtoAltaProveedor.getNombre());
             proveedor.setProveedorTelefono(dtoAltaProveedor.getTelefono());

@@ -635,7 +635,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             float costoPedido = articuloProveedor.getCostoPedido();
             float demanda= articulo.getDemanda();
 
-            float cgiCCompra = precio * loteOptimo;
+            float cgiCCompra = precio * demanda;
             float cgiCAalmacenamiento = costoAlmacenamiento * ((float) loteOptimo / 2);
             float cgiCPedido = costoPedido * (demanda / loteOptimo);
             float cgiCTotal = cgiCCompra + cgiCAalmacenamiento + cgiCPedido;
@@ -801,8 +801,9 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
         for (Articulo articulo : articulos) {
             if (articulo.getFechaBaja() != null)
                 continue;
+            float stockSeguridad = articulo.getModeloInventario().getStockSeguridad();
             if (articulo.getModeloInventario() instanceof ArticuloModeloLoteFijo modelo) {
-                if (articulo.getStock() <= modelo.getPuntoPedido()) {
+                if (articulo.getStock() <= modelo.getPuntoPedido() && articulo.getStock() > stockSeguridad) {
                     List<OrdenCompra> ordenesActivas = ordenCompraRepository.findOrdenesActivasByArticulo(articulo);
                     if (ordenesActivas.isEmpty()) {
                         DTOArticuloListado dto = crearDtoListado(articulo);
@@ -832,7 +833,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             if (articulo.getFechaBaja() != null)
                 continue;
             float stockSeguridad = articulo.getModeloInventario().getStockSeguridad();
-            if (articulo.getStock() < stockSeguridad) {
+            if (articulo.getStock() <= stockSeguridad) {
                 DTOArticuloListado dto = crearDtoListado(articulo);
                 DTOArticuloFaltante dtoEntrega = new DTOArticuloFaltante(
                         dto.getId(), dto.getNombre(), dto.getStock(),
