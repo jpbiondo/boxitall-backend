@@ -11,11 +11,8 @@ import lombok.ToString;
 @ToString
 @AllArgsConstructor
 public class DTOArticuloProveedor {
-    private float costoCompra;
-    private float cargoPedido;
     private float costoPedido;
     private int demoraEntrega;
     private float precioUnitario;
-    private float puntoPedido;
     private DTOProveedor proveedor;
 }

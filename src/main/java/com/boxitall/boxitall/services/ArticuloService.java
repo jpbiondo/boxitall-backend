@@ -83,8 +83,6 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
                     if (artProv.getProveedor().getId() == dtoArtProv.getProveedorId()){         // Lo que sea igual lo actualiza
                         artProv.setPrecioUnitario(dtoArtProv.getPrecioUnitario());
                         artProv.setDemoraEntrega(dtoArtProv.getDemoraEntrega());
-                        artProv.setCargoPedido(dtoArtProv.getCargoPedido());
-                        artProv.setCostoCompra(dtoArtProv.getCostoCompra());
                         artProv.setCostoPedido(dtoArtProv.getCostoPedido());
                         continue loopDTOs;
                     }
@@ -211,8 +209,8 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
                         artProv.getProveedor().getProveedorFechaBaja()
                 );
                 DTOArticuloProveedor dtoArtProv = new DTOArticuloProveedor(
-                        artProv.getCostoCompra(), artProv.getCargoPedido(), artProv.getCostoPedido(),
-                        artProv.getDemoraEntrega(), artProv.getPrecioUnitario(), artProv.getPuntoPedido(),
+                        artProv.getCostoPedido(),
+                        artProv.getDemoraEntrega(), artProv.getPrecioUnitario(),
                         dtoProv
                 );
                 dtoArtProvs.add(dtoArtProv);
@@ -258,8 +256,6 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             // Agregar ArtículoProveedor y setear todos sus datos
             ArticuloProveedor artProv = new ArticuloProveedor();
 
-            artProv.setCostoCompra(dto.getCostoCompra());
-            artProv.setCargoPedido(dto.getCargoPedido());
             artProv.setCostoPedido(dto.getCostoPedido());
             artProv.setDemoraEntrega(dto.getDemoraEntrega());
             artProv.setPrecioUnitario(dto.getPrecioUnitario());
@@ -476,8 +472,8 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
 
     public float calcularZ(float nivelServicio) {
         // Validar que el nivel de servicio esté en el rango válido [0, 1]
-        if (nivelServicio <= 0.5 || nivelServicio >= 1) {
-            throw new IllegalArgumentException("El nivel de servicio debe estar entre 0.5 y 1 (excluyendo ambos extremos).");
+        if (nivelServicio < 0.5 || nivelServicio >= 1) {
+            throw new IllegalArgumentException("El nivel de servicio debe estar entre 0.5 y 1 (excluyendo 1).");
         }
 
         // Usamos la distribución normal estándar para calcular el valor de z
@@ -772,8 +768,8 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
                 Proveedor provPred = articulo.getProvPred();
                 for (ArticuloProveedor ap : articulo.getArtProveedores()) {
                     boolean esPredeterminado = false;
-                    if (provPred != null && ap.getProveedor().getId().equals(idProveedor)) {
-                        esPredeterminado = provPred.getId().equals(idProveedor);
+                    if (provPred != null) {
+                        esPredeterminado = provPred.getId() == idProveedor ;
                     }
                     DTOArticuloProveedorListado dto = new DTOArticuloProveedorListado(
                             articulo.getId(),
