@@ -542,7 +542,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             // Obtener el costo por pedido del proveedor
             int puntoPedido;
             float leadTime = articuloProveedor.getDemoraEntrega();
-            float demanda = articulo.getDemanda();
+            float demanda = articulo.getDemanda()/360; // Para hacerla demanda diaria
             float stockSeguridad = articulo.getModeloInventario().getStockSeguridad();
 
             puntoPedido = Math.round(demanda * leadTime + stockSeguridad);
@@ -670,7 +670,7 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
             throw new Exception("El proveedor predeterminado debe estar registrado como proveedor del artículo");
         }
 
-        float demanda = articulo.getDemanda();
+        float demanda = articulo.getDemanda() / 360 ;
         float stockSeguridad = articulo.getStock();
         float demoraEntrega = articuloProvPred.getDemoraEntrega();
         float periodoIF = modeloInventarioIF.getIntervaloPedido();
@@ -772,8 +772,8 @@ public class ArticuloService extends BaseEntityServiceImpl<Articulo, Long> {
                 Proveedor provPred = articulo.getProvPred();
                 for (ArticuloProveedor ap : articulo.getArtProveedores()) {
                     boolean esPredeterminado = false;
-                    if (provPred != null && ap.getProveedor().getId().equals(idProveedor)) {
-                        esPredeterminado = provPred.getId().equals(idProveedor);
+                    if (provPred != null) {
+                        esPredeterminado = provPred.getId() == idProveedor ;
                     }
                     DTOArticuloProveedorListado dto = new DTOArticuloProveedorListado(
                             articulo.getId(),
